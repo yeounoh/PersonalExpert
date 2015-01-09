@@ -11,60 +11,88 @@ public class SMFactory implements SparseMatrix {
 	
 	private HashMap<Integer, HashMap> userList = new HashMap<Integer, HashMap>();
 	
-	private int userID, itemID;
+	private int userID, itemID, rating, timestamp;
 	
-	private boolean isFisrtInsert = true;
-	
-	private int minUserID=0;
-	private int minItemID=0;
-	private int maxUserID=-1;
 	private int maxItemID=-1;
 	
 	
 	/**
-	 * Insert the information from each line
-	 * @param String line: read line from u.data 
+	 * Insert ratings from each line
+	 * @param String line: read line 
 	 * @return void
 	 */
-	public void insert(String line) {
-		String[] result = line.split("\t"); 					// 0: userID, 1: itemID, 2: rating, 3: timestamp
+	public void insertRating(String line) {
+		String[] result = line.split(","); 					// 0: userID
 		userID = Integer.parseInt(result[0]);
-		itemID = Integer.parseInt(result[1]);
-		
-		if ( isFisrtInsert ) {
-			minUserID=userID;
-			minItemID=itemID;
-			maxUserID=userID;
-			maxItemID=itemID;
+
+		for(int i=1; i<result.length; i++) {
+			String[] eachItem = result[i].split(":");		// 0: ItemID, 1: rating
+			itemID = Integer.parseInt(eachItem[0]);
+			rating = Integer.parseInt(eachItem[1]);
 			
-			isFisrtInsert = false;
-		}
-		
-		if ( userID > maxUserID )	{
-			maxUserID = userID;
-		}
-		if ( itemID > maxItemID )	{
-			maxItemID = itemID;
-		}
-
-		if ( userID < minUserID ) {
-			minUserID = userID;
-		}
-		if ( itemID < minItemID ) {
-			minItemID = itemID;
-		}
-
-		EntryInfo ItemInfo = new EntryInfo();
-		ItemInfo.setRating(Integer.parseInt(result[2]));
-		ItemInfo.setTimestamp(Integer.parseInt(result[3]));
+			if ( itemID > maxItemID )	{
+				maxItemID = itemID;
+			}
+			
+			if(userList.containsKey(userID) && userList.get(userID).containsKey(itemID)) {	// user ok, item ok
+				((EntryInfo)userList.get(userID).get(itemID)).setRating(rating);
+			}
+			else if(userList.containsKey(userID) && !userList.get(userID).containsKey(itemID)) {	// user ok, item empty
+				EntryInfo ItemInfo = new EntryInfo();
+				ItemInfo.setRating(rating);
+				ItemInfo.setTimestamp(0);
 				
-		if(userList.containsKey(userID)) {
-			userList.get(userID).put(itemID, ItemInfo);
+				userList.get(userID).put(itemID, ItemInfo);
+			}
+			else {	// user empty
+				EntryInfo ItemInfo = new EntryInfo();
+				ItemInfo.setRating(rating);
+				ItemInfo.setTimestamp(0);
+
+				HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
+				ratings.put(itemID, ItemInfo);
+				userList.put(userID, ratings);
+			}
 		}
-		else {
-			HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
-			ratings.put(itemID, ItemInfo);
-			userList.put(userID, ratings);
+	}
+	
+	/**
+	 * Insert timestamps from each line
+	 * @param String line: read line 
+	 * @return void
+	 */
+	public void insertTimestamp(String line) {
+		String[] result = line.split(","); 					// 0: userID
+		userID = Integer.parseInt(result[0]);
+
+		for(int i=1; i<result.length; i++) {
+			String[] eachItem = result[i].split(":");		// 0: ItemID, 1: rating
+			itemID = Integer.parseInt(eachItem[0]);
+			timestamp = Integer.parseInt(eachItem[1]);
+			
+			if ( itemID > maxItemID )	{
+				maxItemID = itemID;
+			}
+			
+			if(userList.containsKey(userID) && userList.get(userID).containsKey(itemID)) {	// user ok, item ok
+				((EntryInfo)userList.get(userID).get(itemID)).setTimestamp(timestamp);
+			}
+			else if(userList.containsKey(userID) && !userList.get(userID).containsKey(itemID)) {	// user ok, item empty
+				EntryInfo ItemInfo = new EntryInfo();
+				ItemInfo.setRating(0);
+				ItemInfo.setTimestamp(timestamp);
+				
+				userList.get(userID).put(itemID, ItemInfo);
+			}
+			else {	// user empty
+				EntryInfo ItemInfo = new EntryInfo();
+				ItemInfo.setRating(timestamp);
+				ItemInfo.setTimestamp(0);
+
+				HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
+				ratings.put(itemID, ItemInfo);
+				userList.put(userID, ratings);
+			}
 		}
 	}
 	
@@ -162,14 +190,18 @@ public class SMFactory implements SparseMatrix {
 	}
 }
 
-
 // 참고자료
-//File oFile = new File("u.data");
+//File oFile = new File("rating.data");
+//File oFile2 = new File("timestamp.data");
 //
 //FileReader frd = null;
 //BufferedReader brd = null;
+//FileReader frd2 = null;
+//BufferedReader brd2 = null;
+//
 //
 //String rLine = null;
+//String rLine2 = null;
 //
 //SMFactory smFactory = new SMFactory();
 //   
@@ -178,11 +210,25 @@ public class SMFactory implements SparseMatrix {
 //     brd = new BufferedReader(frd);  
 //                                                         
 //     while ((rLine = brd.readLine())!= null) {
-// 		System.out.println("\n------------------\n 파일로부터 라인별로 저장 \n------------------");
-//    	 smFactory.insert(rLine);
+//    	 System.out.println(rLine);
+//    	 smFactory.insertRating(rLine);
 //     }		     
 //     frd.close();
 //     brd.close();
+//} catch (IOException e) {
+//     e.printStackTrace();
+//}
+//
+//try {
+//     frd2 = new FileReader(oFile2);
+//     brd2 = new BufferedReader(frd2);  
+//                                                         
+//     while ((rLine2 = brd2.readLine())!= null) {
+//    	 System.out.println(rLine2);
+//    	 smFactory.insertTimestamp(rLine2);
+//     }		     
+//     frd2.close();
+//     brd2.close();
 //} catch (IOException e) {
 //     e.printStackTrace();
 //}
@@ -215,4 +261,3 @@ public class SMFactory implements SparseMatrix {
 // for(int i=0; i<lastIndex; i++) {
 //	 System.out.print(i+":"+row[i].getRating()+", "+row[i].getTimestamp()+" | ");
 // }
-
