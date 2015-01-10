@@ -1,14 +1,2 @@
-/CommonExpert.class
-/ExpertMeasure.class
-/KNearestNeighbor.class
-/MyFavoriteExperts.class
-/Parser$User.class
-/Parser.class
-/ParserMovieLens$User.class
-/ParserMovieLens.class
-/ParserSVM.class
-/PersonalizedExpert.class
-/RandomSearch.class
-/Similarity.class
-/SparseMatrix.class
-/Tools.class
+/EntryInfo.class
+/SMFactory.class

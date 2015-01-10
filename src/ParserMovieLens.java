@@ -120,13 +120,13 @@ public class ParserMovieLens {
 			br.close();
 			
 			//make user_ data; user_ : user id | movie id | rating format
-			fos= new FileOutputStream(dst_dir + "\\user_"+nuser+".txt"); //user_943.txt 
+			fos= new FileOutputStream(dst_dir + "/user_"+nuser+".txt"); //user_943.txt 
 			bw= new BufferedWriter(new OutputStreamWriter(fos));
 			
-			fos2= new FileOutputStream(dst_dir + "\\user_"+nuser+"_t.txt");
+			fos2= new FileOutputStream(dst_dir + "/user_"+nuser+"_t.txt");
 			bw2= new BufferedWriter(new OutputStreamWriter(fos2));
 			
-			fos3= new FileOutputStream(dst_dir + "\\user_"+nuser+"_c.txt");
+			fos3= new FileOutputStream(dst_dir + "/user_"+nuser+"_c.txt");
 			bw3= new BufferedWriter(new OutputStreamWriter(fos3));
 			
 			Iterator<Entry<String, User>> itr= uid_map.entrySet().iterator();
@@ -152,8 +152,8 @@ public class ParserMovieLens {
 			bw2.close();
 			bw3.close();
 		}catch (Exception e){
-			System.err.println("Error@preprocess(): " + e.getMessage());
 			e.printStackTrace();
+			System.exit(0);
 		}
 	}
 	
@@ -211,7 +211,7 @@ public class ParserMovieLens {
 				br.close();
 			}
 		}catch (Exception e){
-			System.err.println("Error@makeTestSet(): " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 	
@@ -263,7 +263,8 @@ public class ParserMovieLens {
 			bw2.close();
 			br.close();
 		}catch (Exception e){
-			System.err.println("Error@makeTestSet(): " + e.getMessage());
+			e.printStackTrace();
+			System.exit(0);
 		}
 	}
 	
@@ -311,7 +312,8 @@ public class ParserMovieLens {
 			br.close();
 		}
 		catch (Exception e){
-			System.err.println("Error@loadItemInfo(): " + e.getMessage());
+			e.printStackTrace();
+			System.exit(0);
 		}
 		
 		return i_genre;
@@ -361,7 +363,8 @@ public class ParserMovieLens {
 			br.close();
 		}
 		catch (Exception e){
-			System.err.println("Error@loadItemInfo(): " + e.getMessage());
+			e.printStackTrace();
+			System.exit(0);
 		}
 		
 		return i_release;

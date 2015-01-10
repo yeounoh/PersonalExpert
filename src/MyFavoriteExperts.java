@@ -56,7 +56,7 @@ public class MyFavoriteExperts {
 			pml.loadItemRelease(src, dst);
 			
 			for(int f=0;f<nfold;f++){
-				pml.makeValidSet(dst+"\\user_train_f"+(f+1)+".txt", 5);
+				pml.makeValidSet(dst+"/user_train_f"+(f+1)+".txt", 5);
 			}
 		}
 		else
@@ -97,11 +97,11 @@ public class MyFavoriteExperts {
 						
 						System.out.println("knn with sparse+: "+sparse_month[di] + ", k: "+k[i]+", f: "+(f+1));
 						
-						String p_train = wdir+"\\user_train_f"+(f+1)+".txt";
-						String p_test = wdir+"\\user_test_f"+(f+1)+".txt";
-						String p_genre = wdir+"\\genre.txt";
-						String p_train_t = wdir+"\\user_"+nuser+"_t.txt";
-						String p_release = wdir+"\\release.txt";
+						String p_train = wdir+"/user_train_f"+(f+1)+".txt";
+						String p_test = wdir+"/user_test_f"+(f+1)+".txt";
+						String p_genre = wdir+"/genre.txt";
+						String p_train_t = wdir+"/user_"+nuser+"_t.txt";
+						String p_release = wdir+"/release.txt";
 						
 						KNearestNeighbor knn= new KNearestNeighbor(p_train, p_test, p_train_t, p_release, p_genre, this.nuser, this.nitem, this.ngenre, sparse_month[di]);
 						
@@ -213,14 +213,14 @@ public class MyFavoriteExperts {
 					for(int f=0;f<5;f++){
 						System.out.println("rs sparse+: "+sparse_month[di] + ", k: "+k[i]+", f: "+(f+1));
 						
-						String p_train = wdir+"\\user_train_f"+(f+1)+".txt";
-						String p_train_v = wdir+"\\user_train_f"+(f+1)+"_tr.txt";
-						String p_valid = wdir+"\\user_train_f"+(f+1)+"_vl.txt";
-						String p_test = wdir+"\\user_test_f"+(f+1)+".txt";
-						String p_train_t = wdir+"\\user_"+nuser+"_t.txt";
-						String p_release = wdir+"\\release.txt";
-						//String p_optimal_sim = wdir+"\\optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
-						String p_optimal_exp = wdir+"\\optimal_k"+k[i]+"_f"+(f+1)+"_s"+sparse_month[di]+"_exp.txt"; //wdir+"\\test.txt"; //
+						String p_train = wdir+"/user_train_f"+(f+1)+".txt";
+						String p_train_v = wdir+"/user_train_f"+(f+1)+"_tr.txt";
+						String p_valid = wdir+"/user_train_f"+(f+1)+"_vl.txt";
+						String p_test = wdir+"/user_test_f"+(f+1)+".txt";
+						String p_train_t = wdir+"/user_"+nuser+"_t.txt";
+						String p_release = wdir+"/release.txt";
+						//String p_optimal_sim = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
+						String p_optimal_exp = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"_s"+sparse_month[di]+"_exp.txt"; //wdir+"/test.txt"; //
 						
 						//RandomSearch rs = new RandomSearch(p_train_v, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
 						
@@ -312,13 +312,13 @@ public class MyFavoriteExperts {
 				for(int f=0;f<nfold;f++){
 					System.out.println("SVM data generation with sparse+: "+sparse_month[di] + ", k: "+k[i]+", f: "+(f+1));
 					
-					String p_train = wdir+"\\user_train_f"+(f+1)+".txt";
-					String p_train_v = wdir+"\\user_train_f"+(f+1)+"_tr.txt";
-					String p_test = wdir+"\\user_test_f"+(f+1)+".txt";
-					String p_train_t = wdir+"\\user_"+nuser+"_t.txt";
-					String p_release = wdir+"\\release.txt";
-					//String p_optimal_sim = wdir+"\\optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
-					String p_optimal_exp = wdir+"\\optimal_k"+k[i]+"_f"+(f+1)+"_s"+sparse_month[di]+"_exp.txt";
+					String p_train = wdir+"/user_train_f"+(f+1)+".txt";
+					String p_train_v = wdir+"/user_train_f"+(f+1)+"_tr.txt";
+					String p_test = wdir+"/user_test_f"+(f+1)+".txt";
+					String p_train_t = wdir+"/user_"+nuser+"_t.txt";
+					String p_release = wdir+"/release.txt";
+					//String p_optimal_sim = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
+					String p_optimal_exp = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"_s"+sparse_month[di]+"_exp.txt";
 					String p_svm_train = wdir+"/svm/svm_training_k"+k[i]+"_f"+(f+1)+"_s"+sparse_month[di]+".txt";
 					String p_svm_train_uid = wdir+"/svm/svm_training_k"+k[i]+"_f"+(f+1)+"_s"+sparse_month[di]+"_uid.txt";
 					
@@ -402,12 +402,12 @@ public class MyFavoriteExperts {
 					for(int f=0;f<nfold;f++){
 						System.out.println("Personalized Expert with sparse+: "+sparse_month[di] + ", k: "+k[i]+", f: "+(f+1));
 						
-						String p_train = wdir+"\\user_train_f"+(f+1)+".txt";
-						String p_train_v = wdir+"\\user_train_f"+(f+1)+"_tr.txt";
-						String p_test = wdir+"\\user_test_f"+(f+1)+".txt";
-						String p_train_t = wdir+"\\user_"+nuser+"_t.txt";
-						String p_release = wdir+"\\release.txt";
-						//String p_optimal_sim = wdir+"\\optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
+						String p_train = wdir+"/user_train_f"+(f+1)+".txt";
+						String p_train_v = wdir+"/user_train_f"+(f+1)+"_tr.txt";
+						String p_test = wdir+"/user_test_f"+(f+1)+".txt";
+						String p_train_t = wdir+"/user_"+nuser+"_t.txt";
+						String p_release = wdir+"/release.txt";
+						//String p_optimal_sim = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
 						
 						PersonalizedExpert pe= new PersonalizedExpert(p_train,p_test,p_train_t,p_release,this.nuser,this.nitem,sparse_month[di]);
 						
@@ -526,12 +526,12 @@ public class MyFavoriteExperts {
 					for(int f=0;f<nfold;f++){
 						System.out.println("Common Expert with sparse+: "+sparse_month[di] + ", k: "+k[i]+", f: "+(f+1));
 						
-						String p_train = wdir+"\\user_train_f"+(f+1)+".txt";
-						String p_train_v = wdir+"\\user_train_f"+(f+1)+"_tr.txt";
-						String p_test = wdir+"\\user_test_f"+(f+1)+".txt";
-						String p_train_t = wdir+"\\user_"+nuser+"_t.txt";
-						String p_release = wdir+"\\release.txt";
-						//String p_optimal_sim = wdir+"\\optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
+						String p_train = wdir+"/user_train_f"+(f+1)+".txt";
+						String p_train_v = wdir+"/user_train_f"+(f+1)+"_tr.txt";
+						String p_test = wdir+"/user_test_f"+(f+1)+".txt";
+						String p_train_t = wdir+"/user_"+nuser+"_t.txt";
+						String p_release = wdir+"/release.txt";
+						//String p_optimal_sim = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
 						
 						CommonExpert ce= new CommonExpert(p_train,p_test,p_train_t,p_release,this.nuser,this.nitem,sparse_month[di]);
 						
@@ -641,10 +641,8 @@ public class MyFavoriteExperts {
 	 */
 	public static void main(String[] args){
 		
-		String mlens_100k = "C:/Users/user/workspace/MyFavoriteExperts/dataset/MovieLens/raw_data/ml-100k";           
-		String wdir_100k= "C:/Users/user/workspace/MyFavoriteExperts/dataset/MovieLens/100k_data"; //working directory
-		String mlens_1m = "C:/Users/user/workspace/MyFavoriteExperts/dataset/MovieLens/raw_data/ml-1m";            
-		String wdir_1m= "C:/Users/user/workspace/MyFavoriteExperts/dataset/MovieLens/1m_data"; //working directory
+		String mlens_100k = "/Users/yeounoh/git/PersonalExpert/dataset/MovieLens/raw_data/ml-100k";           
+		String wdir_100k= "/Users/yeounoh/git/PersonalExpert/dataset/MovieLens/100k_data"; //working directory
 		String nflx = "C:/Users/user/workspace/MyFavoriteExperts/dataset/Netflix/raw_data";
 		String wdir_nflx = "C:/Users/user/workspace/MyFavoriteExperts/dataset/Netflix/sampled";
 		
@@ -683,7 +681,7 @@ public class MyFavoriteExperts {
 				br.close();
 			}
 			catch(Exception e){
-				System.err.println("Error@main()");
+				e.printStackTrace();
 				System.exit(0);
 			}
 			
@@ -697,7 +695,7 @@ public class MyFavoriteExperts {
 		int[] sparse_month= new int[]{0};
 		int[] nrec_size= new int[]{20};
 		
-//		mfe.kNearestNeighbor(wdir, k, nfold, sparse_month, nrec_size);
+		mfe.kNearestNeighbor(wdir, k, nfold, sparse_month, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 1, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 2, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 3, nrec_size);
@@ -708,7 +706,7 @@ public class MyFavoriteExperts {
 //		mfe.getSVMdata(wdir, k, j, nfold, sparse_month);
 		//-> generate SVM models
 //		ParserSVM.parseResult(wdir+"/svm/output", j, k, nfold, sparse_month);
-		mfe.personalExperts(wdir, k, j, nfold, sparse_month, nrec_size);
+//		mfe.personalExperts(wdir, k, j, nfold, sparse_month, nrec_size);
 		
 		k= new int[]{50};
 		sparse_month= new int[]{0,1,2};
