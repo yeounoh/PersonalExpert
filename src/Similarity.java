@@ -1,14 +1,5 @@
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 
-/**
- * 
- * @author yeoun
- *
- */
 public class Similarity {
-	
 	public double pearsonCorr(double[] x, double avgx, double[] y, double avgy) {
         if (x.length != y.length) {
             throw new RuntimeException("Both users should have the same number of attributes");
@@ -20,11 +11,11 @@ public class Similarity {
         for (int i = 0; i < x.length; i++) {
         	if(x[i]!=0 && y[i]!=0){
         		sumTop += (x[i]-avgx)*(y[i]-avgy);
-                sumOne += (x[i]-avgx)*(x[i]-avgx);
+        		sumOne += (x[i]-avgx)*(x[i]-avgx);
                 sumTwo += (y[i]-avgy)*(y[i]-avgy);
         	}
         }
-        
+        System.out.println("result:"+sumTop);
         double pearsonCorr = sumTop / (Math.sqrt(sumOne) * Math.sqrt(sumTwo));
         
         if (new Double(pearsonCorr).isNaN())
@@ -32,8 +23,6 @@ public class Similarity {
         
         return pearsonCorr;
     }
-	
-	//significance weighted (n/50)
 	public double wPearsonCorr(double[] x, double avgx, double[] y, double avgy){
 		 if (x.length != y.length) {
 	            throw new RuntimeException("Both users should have the same number of attributes");
