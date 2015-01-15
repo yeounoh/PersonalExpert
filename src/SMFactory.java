@@ -69,6 +69,31 @@ public class SMFactory implements SparseMatrix {
 		return result.length - 1;
 	}
 	
+	public void insertRating(int row, int col, double rating){
+		int userID = row+1;
+		int itemID = col+1;
+		
+		if(userList.containsKey(userID-1) && userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item ok
+			((EntryInfo)userList.get(userID-1).get(itemID-1)).setRating(rating);
+		}
+		else if(userList.containsKey(userID-1) && !userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item empty
+			EntryInfo ItemInfo = new EntryInfo();
+			ItemInfo.setRating(rating);
+			ItemInfo.setTimestamp(0);
+			
+			userList.get(userID-1).put(itemID-1, ItemInfo);
+		}
+		else {	// user empty
+			EntryInfo ItemInfo = new EntryInfo();
+			ItemInfo.setRating(rating);
+			ItemInfo.setTimestamp(0);
+
+			HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
+			ratings.put(itemID-1, ItemInfo);
+			userList.put(userID-1, ratings);
+		}
+	}
+	
 	/**
 	 * Delete a rating from userList
 	 * @param row userID-1

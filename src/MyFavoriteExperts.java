@@ -105,36 +105,36 @@ public class MyFavoriteExperts {
 						
 						KNearestNeighbor knn= new KNearestNeighbor(p_train, p_test, p_train_t, p_release, p_genre, this.nuser, this.nitem, this.ngenre, sparse_month[di]);
 						
-						double mae= knn.knnEval(k[i], 1); //mae
-						double precision= knn.knnEval(k[i], 2); //hit ratio
-						double recall= knn.knnEval(k[i], 3); //recall
-						double missed= knn.knnEval(k[i], 5); //missed
-						
-						bw.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+mae);
+//						double mae= knn.knnEval(k[i], 1); //mae
+//						double precision= knn.knnEval(k[i], 2); //hit ratio
+//						double recall= knn.knnEval(k[i], 3); //recall
+//						double missed= knn.knnEval(k[i], 5); //missed
+						double[] output = knn.knnEval(k[i], 1);
+						bw.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+output[0]); //mae
 						bw.newLine();
 						bw.flush();
 						
-						bw2.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+precision);
+						bw2.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+output[1]); //precision/hitratio
 						bw2.newLine();
 						bw2.flush();
 						
-						bw3.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+recall);
+						bw3.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+output[2]); //recall
 						bw3.newLine();
 						bw3.flush();
 						
-						bw5.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ missed);
+						bw5.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ output[3]); //missed
 						bw5.newLine();
 						bw5.flush();
 						
 						for(int si=0;si<nrec_size.length;si++){
-							double diversity= knn.knnEval2(k[i], 4, nrec_size[si]); //diversity
-//							double precision= knn.knnEval2(k[i], 2, nrec_size[si]); //hit ratio
-//							double recall= knn.knnEval2(k[i], 3, nrec_size[si]); //recall
-							
-							double item_cov= knn.knnEval2(k[i], 6, nrec_size[si]);
-							double user_cov= knn.knnEval2(k[i], 7, nrec_size[si]);
-							
-							bw4.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+diversity);
+//							double diversity= knn.knnEval2(k[i], 4, nrec_size[si]); //diversity
+////							double precision= knn.knnEval2(k[i], 2, nrec_size[si]); //hit ratio
+////							double recall= knn.knnEval2(k[i], 3, nrec_size[si]); //recall
+//							
+//							double item_cov= knn.knnEval2(k[i], 6, nrec_size[si]);
+//							double user_cov= knn.knnEval2(k[i], 7, nrec_size[si]);
+							double[] output2 = knn.knnEval2(k[i], 4, nrec_size[si]);
+							bw4.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+output2[0]); //diversity
 							bw4.newLine();
 							bw4.flush();
 							
@@ -142,11 +142,11 @@ public class MyFavoriteExperts {
 //							bw5.newLine();
 //							bw5.flush();
 							
-							bw6.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+item_cov);
+							bw6.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+output2[1]); //item_cov
 							bw6.newLine();
 							bw6.flush();
 							
-							bw7.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+user_cov);
+							bw7.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+output2[2]); //user_cov
 							bw7.newLine();
 							bw7.flush();
 							

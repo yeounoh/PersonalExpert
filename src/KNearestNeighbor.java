@@ -312,48 +312,51 @@ public class KNearestNeighbor {
 	 * 3. recall (recall): #hits/#liked, for an active user in the test set
 	 * 
 	 * @param k k-nearest neighbors
-	 * @param type 1-MAE, 2-hit ratio, 3-recall, 4-diversity, 5- missed
-	 * @return 
+	 * @param type 1-MAE, 2-hit ratio, 3-recall, 5- missed
+	 * @return double[] {MAE,hit ratio,recall,missed}
 	 */
-	public double knnEval(int k, int type){
+	public double[] knnEval(int k, int type){
+		double[] output = new double[4];
+		
 		int nrating= 0; //cardinality of (u,m) pairs in test set
 		int nrec= 0;
-		int nhit= 0;
+		int nhit_rec= 0;
+		int nhit_liked= 0;
 		int nliked= 0;
 		double missed= 0; //type=5
 		double total= 0;
 		
 		double mae= 0.0; //type=1
-		double precision= 0.0; //type=2
+		double precision= 0.0; //type=2, hit ratio
 		double recall= 0.0; // type=3		
 				
 		double mae_one = 0.0;
 		double nrating_one = 0;
 		
-		FileOutputStream fos = null;
-		BufferedWriter bw = null;
+		//FileOutputStream fos = null;
+		//BufferedWriter bw = null;
 		
 		try{
-			String wdir= "C:/Users/user/workspace/MyFavoriteExperts/dataset/MovieLens/100k_data"; //working directory
+			/**String wdir= "C:/Users/user/workspace/MyFavoriteExperts/dataset/MovieLens/100k_data"; //working directory
 			fos = new FileOutputStream(wdir+"/knn_neighbor.txt");
-			bw = new BufferedWriter(new OutputStreamWriter(fos));
+			bw = new BufferedWriter(new OutputStreamWriter(fos));*/
 			
 			FileStorage fs_uu_sim = new FileStorage("knn_uu_sim.txt");
+			fs_uu_sim.open(); 
 			for(int i=0;i<nuser;i++){
-				int suid= i+1;
+				int suid= i+1; System.out.println("eval "+suid);
 				
-				fs_uu_sim.open();
 				double[] uu_sim = fs_uu_sim.seqAccess();
 				int[] neighbor= Tools.sortTopK(uu_sim, k); //(uu_sim[suid-1], k);
 				for(int j=0;j<neighbor.length;j++){
 					neighbor[j]= neighbor[j]+1;
 					
 					//-------------------------------------------------
-					if(suid == 15){
+					/**if(suid == 15){
 						bw.write("suid:"+suid + " esuid:"+neighbor[j]);
 						bw.newLine();
 						bw.flush();
-					}
+					}*/
 					//-------------------------------------------------
 				}
 				
@@ -362,42 +365,42 @@ public class KNearestNeighbor {
 					
 					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,j);
 					
-					if(type != 4 && ei == null)//trating == 0.0)
+					if(ei == null) //(type != 4 && trating == 0.0)
 						continue;
 					
 					double trating= ei.getRating();
-					double prating= predict(neighbor,suid,smid); 					
+					double prating= predict(neighbor,uu_sim,suid,smid); 					
 								
 					total++;
-					if(type == 1){
+					if(true){
 						mae+= Math.abs(trating-prating);
 						nrating++;
 						
 						//----------------------------------------
-						if(suid == 15){
+						/**if(suid == 15){
 							mae_one+= Math.abs(trating-prating);
 							nrating_one++;
-						}
+						}*/
 						//----------------------------------------
 					}
-					else if(type == 2 && prating > u_avg_rating[suid-1]){
+					if(prating > u_avg_rating[suid-1]){
 						nrec++;
 						if(trating > u_avg_rating[suid-1]){
-							nhit++;
+							nhit_rec++;
 						}
 					}
-					else if(type==3 && trating > u_avg_rating[suid-1]){
+					if(trating > u_avg_rating[suid-1]){
 						nliked++;
 						if(prating > u_avg_rating[suid-1]){
-							nhit++;
+							nhit_liked++;
 						}
 					}
-					else if(type == 5 && u_avg_rating[suid-1] == prating){
+					if(u_avg_rating[suid-1] == prating){
 						missed++;
 					}
 				}
 				//------------------------------------
-				if(type == 1){
+				/**if(type == 1){
 					if(suid == 15){
 						bw.write("mae: "+mae_one/nrating_one);
 						bw.newLine();
@@ -405,31 +408,21 @@ public class KNearestNeighbor {
 						
 						System.out.println("mae for this person..." + mae_one/nrating_one);
 					}					
-				}
+				}*/
+				//-------------------------------------
 			}
 			fs_uu_sim.close();
 		}
 		catch(Exception e){
-			
+			e.printStackTrace();
+			System.exit(1);
 		}
 		
-		
-		if(type == 1){
-			mae= mae/nrating;
-			return mae;
-		}
-		else if(type == 2){
-			precision= (double) nhit/ (double) nrec;
-			return precision;
-		}
-		else if(type == 3){
-			recall= (double) nhit/ (double) nliked;
-			return recall;
-		}
-		else if(type == 5){
-			return missed/total;
-		}
-		return -1.0;
+		output[0]= mae/nrating;
+		output[1]= (double) nhit_rec / (double) nrec;
+		output[2]= (double) nhit_liked / (double) nliked;
+		output[3]= (double) missed/total;
+		return output;
 	}
 	
 	/**
@@ -437,28 +430,25 @@ public class KNearestNeighbor {
 	 * @param k
 	 * @param type
 	 * @param nrec_item
-	 * @return
+	 * @return double[] {diversity, item_cov, user_cov}
 	 */
-	public double knnEval2(int k, int type, int nrec_size){
+	public double[] knnEval2(int k, int type, int nrec_size){
+		double[] output = new double[3];
 		
 		double diversity= 0.0; //type=4
-		double precision= 0.0; //type=2
-		double recall= 0.0; //type=3
+		//type=6 item_cov
+		//type=7 user_cov
 		
 		int[] accessed_cnt= null;
 		
-		SMFactory ui_pred = null; //double[][] ui_pred= null;
-		if(type == 2 || type == 3 || type == 4 || type == 6 || type ==7)
-			ui_pred = new SMFactory(nuser,nitem); //ui_pred= new double[nuser][nitem];
-		
-		if(type == 6)
-			accessed_cnt= new int[nitem];
+		SMFactory ui_pred = new SMFactory(nuser,nitem);
+		accessed_cnt= new int[nitem];
 		
 		try{
 			FileStorage fs_uu_sim = new FileStorage("knn_uu_sim.txt");
 			fs_uu_sim.open();
 			for(int i=0;i<nuser;i++){
-				int suid= i+1;
+				int suid= i+1; System.out.println("eval2 "+suid);
 				
 				double[] uu_sim = fs_uu_sim.seqAccess();
 				int[] neighbor= Tools.sortTopK(uu_sim, k); //(uu_sim[suid-1], k);
@@ -466,24 +456,21 @@ public class KNearestNeighbor {
 					neighbor[j]= neighbor[j]+1;
 				}
 				
-				String row_ui_pred= ""+suid; //SMFactory
+				//String row_ui_pred= ""+suid; //SMFactory1
 				for(int j=0;j<nitem;j++){
 					int smid= j+1;
 					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,j);
 					
-					if(i_test[smid-1] != 1)
+					if(i_test[smid-1] != 1 || ei == null)
 						continue; //only consider items in the test data
 					
-					double prating= predict(neighbor,suid,smid); 					
-									
-					if(type == 2 || type == 3 || type == 4 || type == 6 || type == 7){
-						row_ui_pred += ","+smid+":"+prating;//ui_pred[suid-1][smid-1]= prating; //i_avg_rating if missed
-						
-						if(type == 6 && ei != null)
-							accessed_cnt[smid-1]= accessed_cnt[smid-1]+1;
-					}
+					double prating= predict(neighbor,uu_sim,suid,smid); //i_avg_rating if missed
+					ui_pred.insertRating(suid-1,smid-1,prating);
+					//row_ui_pred += ","+smid+":"+prating;
+					
+					accessed_cnt[smid-1]= accessed_cnt[smid-1]+1;
 				}
-				ui_pred.insertRating(row_ui_pred); //SMFactory
+				//ui_pred.insertRating(row_ui_pred); //SMFactory1
 			}
 			fs_uu_sim.close();
 		}
@@ -491,226 +478,75 @@ public class KNearestNeighbor {
 			ie.printStackTrace();
 			System.exit(1);
 		}
+
+		double sum_top = 0.0, sum_top2 = 0.0;
+		double sum_bot = 0.0, sum_bot2 = 0.0;
 		
-		if(type == 2){
-			double avg= 0.0;
+		//recommendation lists for all users
+		int[][] ui_recIdx= new int[nuser][nrec_size];
+		int[] recommended= new int[nitem];
+		for(int i=0;i<nuser;i++){
+			ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
 			
-			//recommendation lists for all users (needs to be fixed!) : 2015yr
-			int[][] ui_recIdx= new int[nuser][nrec_size]; //[nuser][nrec_size]
-			for(int i=0;i<nuser;i++){
-				double sum_top= 0;
-				double sum_bot= 0;
-				
-				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
-				
-				for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
-					sum_bot++;
-					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,ui_recIdx[i][ii]);
-					if(ei != null && ei.getRating() > u_avg_rating[i])
-						sum_top++;
-					/**
-					if(ui_pred[i][ui_recIdx[i][ii]] > u_avg_rating[i]){
-						sum_bot++;
-						if(ui_test[i][ui_recIdx[i][ii]] > u_avg_rating[i])
-							sum_top++;
-					}
-					*/
-				}
-				avg += sum_top/sum_bot;
+			for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
+				recommended[ui_recIdx[i][ii]]= 1;
 			}
 			
-			return avg/nuser;
+			int full= 1;
+			for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
+				EntryInfo ei = (EntryInfo) ui_test.getEntry(i,ui_recIdx[i][ii]);
+				if(ei != null && ei.getRating() <= u_avg_rating[i]){
+					full= 0;
+				}
+			}
+			
+			if(full == 1){
+				sum_top2 += u_icount[i];
+			}
+			sum_bot2 += u_icount[i];
 		}
 		
-		if(type == 3){
-			double avg= 0;
-			
-			//recommendation lists for all users
-			int[][] ui_recIdx= new int[nuser][nitem];
-			for(int i=0;i<nuser;i++){
-				double sum_top= 0;
-				double sum_bot= 0;
+		int count= 0;
+		for(int i=0;i<nuser;i++){	
+			for(int j=i;j<nuser;j++){ //symmetric
+				if(i == j)
+					continue;
 				
-				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
-				
-				for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
-					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,ui_recIdx[i][ii]);
-					if(ei != null && ei.getRating() > u_avg_rating[i])
-						sum_top++;
-					else
-						sum_bot++;
-					/**
-					if(ui_test[i][ui_recIdx[i][ii]] > u_avg_rating[i]){
-						sum_bot++;
-						if(ui_pred[i][ui_recIdx[i][ii]] > u_avg_rating[i])
-							sum_top++;
+				int ncitem= 0;
+				for(int ii=0;ii<nrec_size;ii++){
+					for(int jj=0;jj<nrec_size;jj++){
+						if(ui_recIdx[i][ii] == ui_recIdx[j][jj])
+							ncitem++;
 					}
-					*/
 				}
-				avg += sum_top/(sum_top+sum_bot);
+				diversity += 1 - ((double) ncitem/(double) nrec_size);
+				count++;
 			}
-			
-			return avg/nuser;
-		}	
-		if(type == 4){ 
-			//int nrec_item= 20;
-			
-			//recommendation lists for all users
-			int[][] ui_recIdx= new int[nuser][nrec_size];
-			for(int i=0;i<nuser;i++){
-				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
-			}
-			
-			int count= 0;
-			for(int i=0;i<nuser;i++){	
-				for(int j=i;j<nuser;j++){ //symmetric
-					if(i == j)
-						continue;
-					
-					int ncitem= 0;
-					for(int ii=0;ii<nrec_size;ii++){
-						for(int jj=0;jj<nrec_size;jj++){
-							if(ui_recIdx[i][ii] == ui_recIdx[j][jj])
-								ncitem++;
-						}
-					}
-					diversity += 1 - ((double) ncitem/(double) nrec_size);
-					count++;
-				}
-			}
-			return diversity/count;
 		}
 		
-		else if(type == 6){
-						
-			double sum_top= 0;
-			double sum_bot= 0;
-			
-			//recommendation lists for all users
-			int[][] ui_recIdx= new int[nuser][nrec_size];
-			int[] recommended= new int[nitem];
-			for(int i=0;i<nuser;i++){
-				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
-				
-				for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
-					recommended[ui_recIdx[i][ii]]= 1;
-				}
+		for(int i=0;i<nitem;i++){
+			if(recommended[i] == 1){
+				sum_top+=accessed_cnt[i];
 			}
-			
-			for(int i=0;i<nitem;i++){
-				if(recommended[i] == 1){
-					sum_top+=accessed_cnt[i];
-				}
-				sum_bot+=accessed_cnt[i];
-			}
-			
-			return sum_top/sum_bot;
+			sum_bot+=accessed_cnt[i];
 		}
-		else if(type == 7){
-			double sum_top= 0;
-			double sum_bot= 0;
-			
-			//recommendation lists for all users
-			int[][] ui_recIdx= new int[nuser][nrec_size];
-			int[] recommended= new int[nitem];
-			for(int i=0;i<nuser;i++){
-				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
-				
-				int full= 1;
-				for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
-					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,ui_recIdx[i][ii]);
-					if(ei != null && ei.getRating() <= u_avg_rating[i]){
-						full= 0;
-					}
-				}
-				
-				if(full == 1){
-					sum_top += u_icount[i];
-				}
-				sum_bot += u_icount[i];
-			}
-			
-			return sum_top/sum_bot;
-		}
-		return -1.0;
+		
+		output[0] = diversity/count;
+		output[1] = sum_top/sum_bot;
+		output[2] = sum_top2/sum_bot2;
+		
+		return output;
 	}
 	
-	/**
-	 * take top k most similar neighbors; 
-	 * if there is no neighbor purchased the item, 
-	 * then take the average rating of the active user
-	 * 
-	 * @param sim user-user similarity vector for the active user
-	 * @param suid active user id
-	 * @param smid target item id
-	 * @param k neighborhood size
-	 * @return predicted rating
-	 */
-	/**
-	private double predict(double[] sim, int suid, int smid, int k){
+	private double predict(int[] neighbor, double[] sim, int suid, int smid){
 		double sumTop= 0.0;
 		double sumBot= 0.0;
-		int neighbor_rated= 0;
 		
-		double[] tmp_sim= sim.clone();
-		//int[] topK= Tools.sortTopK(tmp_sim,tmp_sim.length); //note: value = uid-1; 
-		int[] topK= Tools.sortTopK(tmp_sim,k); //value = uid-1;
-		
-		for(int i=0;i<topK.length;i++){
-			if(ui_train[topK[i]][smid-1] != 0.0){
-				sumTop+= (ui_train[topK[i]][smid-1] - u_avg_rating[topK[i]]) * uu_sim[suid-1][topK[i]];
-				//sumTop+= (ui_train[topK[i]][smid-1] - u_avg_rating[topK[i]])/u_std[topK[i]] * uu_sim[suid-1][topK[i]];
-				sumBot+= Math.abs(uu_sim[suid-1][topK[i]]);
-				neighbor_rated++;
-			}
-			else{ //remove this? smoothing by user-genre preference
-				double prating= 0.0;
-				//user-genre smoothing
-				int cnt= 0;
-				for(int j=0;j<i_genre[0].length;j++){
-					if(i_genre[smid-1][j] == 1){
-						prating+= u_avg_genre[topK[i]][j];
-						cnt++;
-					}
-				}
-				
-				prating = prating/cnt; 
-				sumTop+= (prating - u_avg_rating[topK[i]]) * uu_sim[suid-1][topK[i]];
-				sumBot+= Math.abs(uu_sim[suid-1][topK[i]]);
-				neighbor_rated++;
-				
-				//user smoothing
-				prating = u_avg_rating[topK[i]]; 
-				sumTop+= (prating - u_avg_rating[topK[i]]) * uu_sim[suid-1][topK[i]];
-				sumBot+= Math.abs(uu_sim[suid-1][topK[i]]);
-				neighbor_rated++;
-			}
-			
-			if(neighbor_rated >= k)
-				break;
-		} 
-		if(sumBot == 0.0){ //cold start problem
-			return i_avg_rating[smid-1];//u_avg_rating[suid-1];
-		}
-		
-		return u_avg_rating[suid-1] + sumTop/sumBot;
-		//return u_avg_rating[suid-1] + u_std[suid-1] * sumTop/sumBot;
-	}	
-	*/
-	
-	private double predict(int[] neighbor, int suid, int smid){
-		double sumTop= 0.0;
-		double sumBot= 0.0;
-		int neighbor_rated= 0;
-		
-		FileStorage fs_uu_sim = new FileStorage("knn_uu_sim.txt");
 		for(int i=0;i<neighbor.length;i++){
 			EntryInfo ei = (EntryInfo) ui_train.getEntry(neighbor[i]-1,smid-1);
-			//if(ui_train[neighbor[i]-1][smid-1] != 0.0){
 			if(ei != null && ei.getRating() != 0.0){
-				sumTop+= (ei.getRating() - u_avg_rating[neighbor[i]-1]) * fs_uu_sim.randAccess(suid-1)[neighbor[i]-1];
-				sumBot+= Math.abs(fs_uu_sim.randAccess(suid-1)[neighbor[i]-1]);
-				neighbor_rated++;
+				sumTop+= (ei.getRating() - u_avg_rating[neighbor[i]-1]) * sim[neighbor[i]-1];
+				sumBot+= Math.abs(sim[neighbor[i]-1]);
 			}
 			else{ //remove this? smoothing by user-genre preference
 			}
