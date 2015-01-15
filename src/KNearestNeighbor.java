@@ -76,16 +76,12 @@ public class KNearestNeighbor {
 	 * @throws IOException 
 	 */
 	public void KNNsetUserItemTest(String p_train, String p_test, String p_train_t, String p_release, String p_genre) throws IOException{	
-		ui_train= new SMFactory(nuser,nitem); //new double[nuser][nitem];
-		ui_test= new SMFactory(nuser,nitem); //new double[nuser][nitem];
+		ui_train= new SMFactory(nuser,nitem); 
+		ui_test= new SMFactory(nuser,nitem); 
 		i_test= new int[nitem];
 		u_avg_rating= new double[nuser];
 		i_avg_rating= new double[nitem];
 		u_std= new double[nuser];
-		//uu_sim= new double[nuser][nuser]; 
-		//u_avg_genre= new double[nuser][ngenre];
-		//i_genre= new int[nitem][ngenre];
-		//ui_time= new long[nuser][nitem];
 		i_release= new long[nitem];
 		u_icount= new int[nuser];
 		
@@ -100,18 +96,6 @@ public class KNearestNeighbor {
 			double r_cnt= 0;
 			while((line= br.readLine())!=null){
 				r_cnt += ui_train.insertRating(line);
-				
-//				tokens= line.split("[,]");
-//				int suid= Integer.parseInt(tokens[0]);
-//				for(int i=1;i<tokens.length;i++){
-//					tokens2= tokens[i].split("[:]");
-//					int smid= Integer.parseInt(tokens2[0]);
-//					double rating= (double) Integer.parseInt(tokens2[1]);
-//					ui_train[suid-1][smid-1]= rating;
-//					
-//					if(rating > 0)
-//						r_cnt++;
-//				}
 			}
 			br.close();
 			
@@ -120,42 +104,6 @@ public class KNearestNeighbor {
 			double sparsity_orig= (1-(r_cnt/(double)(nuser*nitem)));
 			System.out.println("Training set sparsity: "+sparsity_orig);
 			
-			/**
-			if(sparse_month != -1.0){
-				int remove_cnt= (int) Math.ceil(delta_sparse/100 * nitem);
-				Random rs= new Random();
-				
-				for(int i=0;i<nuser;i++){
-					int removed_cnt= 0, cnt= 0;
-					while(cnt < nitem && removed_cnt < remove_cnt){
-						int j= rs.nextInt(nitem);
-						if(ui_train[i][j] > 0){
-							ui_train[i][j]= 0;
-							removed_cnt++;
-							r_cnt--;
-						}
-						cnt++;
-					}
-				}
-				double sparsity_new= (1-(r_cnt/(double)(nuser*nitem)));
-				System.out.println("Training set new sparsity: "+sparsity_new);
-			}
-			*/
-			/**
-			fis= new FileInputStream(p_genre);
-			br= new BufferedReader(new InputStreamReader(fis));
-			int item_cnt= 0;
-			while((line= br.readLine())!=null){
-				tokens= line.split("[:]");
-				tokens2= tokens[1].split("[|]");
-				
-				for(int i=0;i<tokens2.length;i++){
-					i_genre[item_cnt][i]= Integer.parseInt(tokens2[i]); 
-				}
-				item_cnt++;
-			}
-			br.close();
-			*/		
 			fis= new FileInputStream(p_test);
 			br= new BufferedReader(new InputStreamReader(fis));
 			while((line= br.readLine())!=null){
@@ -166,7 +114,6 @@ public class KNearestNeighbor {
 					tokens2= tokens[i].split("[:]");
 					int smid= Integer.parseInt(tokens2[0]);
 					double rating= (double) Integer.parseInt(tokens2[1]);
-					//ui_test[suid-1][smid-1]= rating;
 					i_test[smid-1]= 1;
 				}
 			}
@@ -182,12 +129,8 @@ public class KNearestNeighbor {
 					tokens2= tokens[i].split("[:]");
 					int smid= Integer.parseInt(tokens2[0]);
 					long timestamp= Long.parseLong(tokens2[1]);
-					//ui_time[suid-1][smid-1]= timestamp; 
-					
-					//if(sparse_month != -1 && timestamp > cut_time && ui_train_sparse[suid-1][smid-1] != 0){
 					if(sparse_month != -1 && timestamp > cut_time){
-						//ui_test[suid-1][smid-1]= 0;
-						ui_train_sparse.deleteRating(suid-1, smid-1);//ui_train_sparse[suid-1][smid-1]= 0;
+						ui_train_sparse.deleteRating(suid-1, smid-1);
 						r_cnt--;
 					}
 				}
@@ -220,10 +163,6 @@ public class KNearestNeighbor {
 					cnt++;
 					avgsum+=ei.getRating();
 				}
-//				if(ui_train_sparse[i][j]!=0){
-//	        		cnt++;
-//	        		avgsum+=ui_train_sparse[i][j];
-//	        	}
 			}
 			u_avg_rating[i]= avgsum/((double) cnt);
 			u_icount[i]= cnt;
@@ -249,32 +188,6 @@ public class KNearestNeighbor {
 		}
 		bw.close();
 		
-		//u_avg_genre
-		/**
-		int[][] u_cnt_genre= new int[nuser][i_genre[0].length];
-		for(int i=0;i<ui_train_sparse.length;i++){
-			for(int j=0;j<ui_train_sparse[0].length;j++){
-				if(ui_train_sparse[i][j] != 0){
-					for(int k=0;k<i_genre[0].length;k++){
-						if(i_genre[j][k] == 1){
-							u_avg_genre[i][k]= u_avg_genre[i][k] + ui_train_sparse[i][j];
-							u_cnt_genre[i][k]= u_cnt_genre[i][k] + 1;
-						}
-					}
-				}
-			}
-		}
-		for(int i=0;i<u_avg_genre.length;i++){
-			for(int j=0;j<u_avg_genre[0].length;j++){
-				if(u_cnt_genre[i][j] == 0){
-					u_avg_genre[i][j]= u_avg_rating[i];
-				}
-				else{
-					u_avg_genre[i][j]= u_avg_genre[i][j]/u_cnt_genre[i][j];
-				}
-			}
-		}
-		*/
 		for(int i=0;i<nuser;i++){ //rows or users
 			double std=0.0, cnt= 0.0, dev= 0.0;
 			for(int j=0;j<nitem;j++){ //cols or items
