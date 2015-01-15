@@ -11,7 +11,8 @@ import java.util.Map.Entry;
 public class SMFactory implements SparseMatrix {
 	
 	private HashMap<Integer, HashMap> userList = new HashMap<Integer, HashMap>();
-	private int userID, itemID, rating, timestamp;
+	private int userID, itemID, timestamp;
+	private double rating; //rating can be double
 	private int maxItemID=-1;
 	private int maxUserID=-1;
 	
@@ -38,21 +39,21 @@ public class SMFactory implements SparseMatrix {
 		for(int i=1; i<result.length; i++) {
 			String[] eachItem = result[i].split(":");		// 0: ItemID, 1: rating
 			itemID = Integer.parseInt(eachItem[0]);
-			rating = Integer.parseInt(eachItem[1]);
+			rating = Double.parseDouble(eachItem[1]);
 			
 //			if ( itemID > maxItemID )	{
 //				maxItemID = itemID;
 //			}
 			
-			if(userList.containsKey(userID) && userList.get(userID).containsKey(itemID)) {	// user ok, item ok
-				((EntryInfo)userList.get(userID).get(itemID)).setRating(rating);
+			if(userList.containsKey(userID-1) && userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item ok
+				((EntryInfo)userList.get(userID-1).get(itemID-1)).setRating(rating);
 			}
-			else if(userList.containsKey(userID) && !userList.get(userID).containsKey(itemID)) {	// user ok, item empty
+			else if(userList.containsKey(userID-1) && !userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item empty
 				EntryInfo ItemInfo = new EntryInfo();
 				ItemInfo.setRating(rating);
 				ItemInfo.setTimestamp(0);
 				
-				userList.get(userID).put(itemID, ItemInfo);
+				userList.get(userID-1).put(itemID-1, ItemInfo);
 			}
 			else {	// user empty
 				EntryInfo ItemInfo = new EntryInfo();
@@ -60,8 +61,8 @@ public class SMFactory implements SparseMatrix {
 				ItemInfo.setTimestamp(0);
 
 				HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
-				ratings.put(itemID, ItemInfo);
-				userList.put(userID, ratings);
+				ratings.put(itemID-1, ItemInfo);
+				userList.put(userID-1, ratings);
 			}
 		}
 		
@@ -70,8 +71,8 @@ public class SMFactory implements SparseMatrix {
 	
 	/**
 	 * Delete a rating from userList
-	 * @param row user ID
-	 * @param col item ID 
+	 * @param row userID-1
+	 * @param col itemID-1 
 	 * @return void
 	 */
 	public void deleteRating(int row, int col) {
@@ -97,15 +98,15 @@ public class SMFactory implements SparseMatrix {
 //				maxItemID = itemID;
 //			}
 			
-			if(userList.containsKey(userID) && userList.get(userID).containsKey(itemID)) {	// user ok, item ok
-				((EntryInfo)userList.get(userID).get(itemID)).setTimestamp(timestamp);
+			if(userList.containsKey(userID-1) && userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item ok
+				((EntryInfo)userList.get(userID-1).get(itemID-1)).setTimestamp(timestamp);
 			}
-			else if(userList.containsKey(userID) && !userList.get(userID).containsKey(itemID)) {	// user ok, item empty
+			else if(userList.containsKey(userID-1) && !userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item empty
 				EntryInfo ItemInfo = new EntryInfo();
 				ItemInfo.setRating(0);
 				ItemInfo.setTimestamp(timestamp);
 				
-				userList.get(userID).put(itemID, ItemInfo);
+				userList.get(userID-1).put(itemID-1, ItemInfo);
 			}
 			else {	// user empty
 				EntryInfo ItemInfo = new EntryInfo();
@@ -113,8 +114,8 @@ public class SMFactory implements SparseMatrix {
 				ItemInfo.setTimestamp(0);
 
 				HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
-				ratings.put(itemID, ItemInfo);
-				userList.put(userID, ratings);
+				ratings.put(itemID-1, ItemInfo);
+				userList.put(userID-1, ratings);
 			}
 		}
 		
@@ -123,8 +124,8 @@ public class SMFactory implements SparseMatrix {
 	
 	/**
 	 * Get an entry (can be null)
-	 * @param int row: userID
-	 * @param int col: itemID
+	 * @param int row: userID-1
+	 * @param int col: itemID-1
 	 * @return EntryInfo object having byte rating & int timestamp
 	 */
 	public Object getEntry(int row, int col) {
@@ -133,7 +134,7 @@ public class SMFactory implements SparseMatrix {
 	
 	/**
 	 * Get a row having entries
-	 * @param int row: row number (userID)
+	 * @param int row: row number (userID-1)
 	 * @return a row containing sparse entries (e.g. zeros)
 	 */
 	public Object[] getRow(int row) {
@@ -149,8 +150,8 @@ public class SMFactory implements SparseMatrix {
 			System.out.println(entry.getValue().getRating());
 			System.out.println(entry.getValue().getTimestamp());
 
-			output[entry.getKey()-1].setRating(entry.getValue().getRating());
-			output[entry.getKey()-1].setTimestamp(entry.getValue().getTimestamp());
+			output[entry.getKey()].setRating(entry.getValue().getRating());
+			output[entry.getKey()].setTimestamp(entry.getValue().getTimestamp());
 		}
 		
 		return output;
@@ -161,13 +162,13 @@ public class SMFactory implements SparseMatrix {
 	 * @param int row: row number (userID)
 	 * @return a row containing sparse entries (e.g. zeros)
 	 */
-	public int[] getRowRating(int row) {
+	public double[] getRowRating(int row) {
 		HashMap<Integer, EntryInfo> aUser = userList.get(row);
 		
-		int[] output = new int[maxItemID];
+		double[] output = new double[maxItemID];
 		
 		for(Entry<Integer, EntryInfo> entry : aUser.entrySet()) {
-			output[entry.getKey()-1] = entry.getValue().getRating();
+			output[entry.getKey()] = entry.getValue().getRating();
 		}
 		
 		return output;
@@ -185,7 +186,7 @@ public class SMFactory implements SparseMatrix {
 		int[] output = new int[maxItemID];
 		
 		for(Entry<Integer, EntryInfo> entry : aUser.entrySet()) {
-			output[entry.getKey()-1] = entry.getValue().getTimestamp();
+			output[entry.getKey()] = entry.getValue().getTimestamp();
 		}
 		
 		return output;

@@ -16,8 +16,8 @@ public class EntryInfo {
 	 * @param int rating 
 	 * @return
 	 */
-	public void setRating(int rating) {
-		this.rating = (byte)rating;
+	public void setRating(double rating2) {
+		this.rating = (byte)rating2;
 	}
 
 	/**

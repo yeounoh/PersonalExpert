@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
@@ -28,7 +29,7 @@ public class KNearestNeighbor {
 	private double[] u_avg_rating;
 	private double[] i_avg_rating;
 	private double[] u_std;
-	private double[][] uu_sim;
+	//private double[][] uu_sim; //store in file
 	private double[][] u_avg_genre;
 	private int[][] i_genre;
 	//private long[][] ui_time;
@@ -42,7 +43,7 @@ public class KNearestNeighbor {
 	private int ngenre;
 	private int sparse_month = -1;
 	
-	public KNearestNeighbor(String p_train, String p_test, String p_train_t, String p_release, String p_genre, int nuser, int nitem, int ngenre){
+	public KNearestNeighbor(String p_train, String p_test, String p_train_t, String p_release, String p_genre, int nuser, int nitem, int ngenre) throws IOException{
 		this.nuser= nuser;
 		this.nitem= nitem;
 		this.ngenre= ngenre;
@@ -50,7 +51,7 @@ public class KNearestNeighbor {
 		KNNsetUserItemTest(p_train, p_test, p_train_t, p_release, p_genre);
 	}
 	
-	public KNearestNeighbor(String p_train, String p_test, String p_train_t, String p_release, String p_genre, int nuser, int nitem, int ngenre, int sparse_month){
+	public KNearestNeighbor(String p_train, String p_test, String p_train_t, String p_release, String p_genre, int nuser, int nitem, int ngenre, int sparse_month) throws IOException{
 		this.nuser= nuser;
 		this.nitem= nitem;
 		this.ngenre= ngenre;
@@ -72,15 +73,16 @@ public class KNearestNeighbor {
 	 * @param train_p training set
 	 * @param test_p
 	 * @param genre_p
+	 * @throws IOException 
 	 */
-	public void KNNsetUserItemTest(String p_train, String p_test, String p_train_t, String p_release, String p_genre){	
+	public void KNNsetUserItemTest(String p_train, String p_test, String p_train_t, String p_release, String p_genre) throws IOException{	
 		ui_train= new SMFactory(nuser,nitem); //new double[nuser][nitem];
 		ui_test= new SMFactory(nuser,nitem); //new double[nuser][nitem];
 		i_test= new int[nitem];
 		u_avg_rating= new double[nuser];
 		i_avg_rating= new double[nitem];
 		u_std= new double[nuser];
-		uu_sim= new double[nuser][nuser]; 
+		//uu_sim= new double[nuser][nuser]; 
 		//u_avg_genre= new double[nuser][ngenre];
 		//i_genre= new int[nitem][ngenre];
 		//ui_time= new long[nuser][nitem];
@@ -230,15 +232,25 @@ public class KNearestNeighbor {
 				u_avg_rating[i] = 0;
 		}
 		
+		//use file to store uu_sim
+		FileOutputStream fos= new FileOutputStream("knn_uu_sim.txt");
+		BufferedWriter bw= new BufferedWriter(new OutputStreamWriter(fos));
 		Similarity sim= new Similarity();
-		for(int i=0;i<ui_train_sparse.length;i++){
-			for(int j=i;j<ui_train_sparse.length;j++){ //lower half
-				uu_sim[i][j]= sim.pearsonCorr(ui_train_sparse[i],u_avg_rating[i],ui_train_sparse[j],u_avg_rating[j]);
-				uu_sim[j][i]= uu_sim[i][j];
+		for(int i=0;i<nuser;i++){
+			double[] r_i = ui_train_sparse.getRowRating(i);
+			String sim_i = ""+sim.pearsonCorr(r_i,u_avg_rating[i],ui_train_sparse.getRowRating(0),u_avg_rating[0]);
+			for(int j=1;j<nuser;j++){ //lower half
+				double[] r_j = ui_train_sparse.getRowRating(j);
+				sim_i += " "+sim.pearsonCorr(r_i,u_avg_rating[i],r_j,u_avg_rating[j]);
 			}
+			bw.write(sim_i);
+			bw.newLine();
+			bw.flush();
 		}
+		bw.close();
 		
 		//u_avg_genre
+		/**
 		int[][] u_cnt_genre= new int[nuser][i_genre[0].length];
 		for(int i=0;i<ui_train_sparse.length;i++){
 			for(int j=0;j<ui_train_sparse[0].length;j++){
@@ -262,13 +274,14 @@ public class KNearestNeighbor {
 				}
 			}
 		}
-		
-		for(int i=0;i<ui_train_sparse.length;i++){ //rows or users
+		*/
+		for(int i=0;i<nuser;i++){ //rows or users
 			double std=0.0, cnt= 0.0, dev= 0.0;
-			for(int j=0;j<ui_train_sparse[0].length;j++){ //cols or items
-				if(ui_train_sparse[i][j]!=0){
+			for(int j=0;j<nitem;j++){ //cols or items
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(i,j);
+				if(ei != null && ei.getRating() != 0){
 	        		cnt++;
-	        		dev = ui_train_sparse[i][j] - u_avg_rating[i];
+	        		dev = ei.getRating() - u_avg_rating[i];
 	        		std += dev * dev;
 	        	}
 			}
@@ -278,8 +291,9 @@ public class KNearestNeighbor {
 		for(int j=0;j<nitem;j++){
 			int iu_cnt= 0;
 			for(int i=0;i<nuser;i++){
-				if(ui_train_sparse[i][j] != 0){
-					i_avg_rating[j]= i_avg_rating[j]+ui_train_sparse[i][j];
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(i,j);
+				if(ei != null && ei.getRating() != 0){
+					i_avg_rating[j]= i_avg_rating[j]+ei.getRating();
 					iu_cnt++;
 				}
 			}
@@ -324,10 +338,13 @@ public class KNearestNeighbor {
 			fos = new FileOutputStream(wdir+"/knn_neighbor.txt");
 			bw = new BufferedWriter(new OutputStreamWriter(fos));
 			
+			FileStorage fs_uu_sim = new FileStorage("knn_uu_sim.txt");
 			for(int i=0;i<nuser;i++){
 				int suid= i+1;
-							
-				int[] neighbor= Tools.sortTopK(uu_sim[suid-1], k);
+				
+				fs_uu_sim.open();
+				double[] uu_sim = fs_uu_sim.seqAccess();
+				int[] neighbor= Tools.sortTopK(uu_sim, k); //(uu_sim[suid-1], k);
 				for(int j=0;j<neighbor.length;j++){
 					neighbor[j]= neighbor[j]+1;
 					
@@ -342,11 +359,13 @@ public class KNearestNeighbor {
 				
 				for(int j=0;j<nitem;j++){
 					int smid= j+1;
-					double trating= ui_test[i][j];
 					
-					if(type != 4 && trating == 0.0)
+					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,j);
+					
+					if(type != 4 && ei == null)//trating == 0.0)
 						continue;
 					
+					double trating= ei.getRating();
 					double prating= predict(neighbor,suid,smid); 					
 								
 					total++;
@@ -388,6 +407,7 @@ public class KNearestNeighbor {
 					}					
 				}
 			}
+			fs_uu_sim.close();
 		}
 		catch(Exception e){
 			
@@ -427,53 +447,66 @@ public class KNearestNeighbor {
 		
 		int[] accessed_cnt= null;
 		
-		double[][] ui_pred= null;
+		SMFactory ui_pred = null; //double[][] ui_pred= null;
 		if(type == 2 || type == 3 || type == 4 || type == 6 || type ==7)
-			ui_pred= new double[nuser][nitem];
+			ui_pred = new SMFactory(nuser,nitem); //ui_pred= new double[nuser][nitem];
 		
 		if(type == 6)
 			accessed_cnt= new int[nitem];
 		
-		for(int i=0;i<nuser;i++){
-			int suid= i+1;
-						
-			int[] neighbor= Tools.sortTopK(uu_sim[suid-1], k);
-			for(int j=0;j<neighbor.length;j++){
-				neighbor[j]= neighbor[j]+1;
-			}
-			
-			for(int j=0;j<nitem;j++){
-				int smid= j+1;
-				double trating= ui_test[i][j];
-								
-				if(i_test[smid-1] != 1)
-					continue; //only consider items in the test data
+		try{
+			FileStorage fs_uu_sim = new FileStorage("knn_uu_sim.txt");
+			fs_uu_sim.open();
+			for(int i=0;i<nuser;i++){
+				int suid= i+1;
 				
-				double prating= predict(neighbor,suid,smid); 					
-								
-				if(type == 2 || type == 3 || type == 4 || type == 6 || type == 7){
-					ui_pred[suid-1][smid-1]= prating; //i_avg_rating if missed
-					
-					if(type == 6 && trating != 0)
-						accessed_cnt[smid-1]= accessed_cnt[smid-1]+1;
+				double[] uu_sim = fs_uu_sim.seqAccess();
+				int[] neighbor= Tools.sortTopK(uu_sim, k); //(uu_sim[suid-1], k);
+				for(int j=0;j<neighbor.length;j++){
+					neighbor[j]= neighbor[j]+1;
 				}
 				
+				String row_ui_pred= ""+suid; //SMFactory
+				for(int j=0;j<nitem;j++){
+					int smid= j+1;
+					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,j);
+					
+					if(i_test[smid-1] != 1)
+						continue; //only consider items in the test data
+					
+					double prating= predict(neighbor,suid,smid); 					
+									
+					if(type == 2 || type == 3 || type == 4 || type == 6 || type == 7){
+						row_ui_pred += ","+smid+":"+prating;//ui_pred[suid-1][smid-1]= prating; //i_avg_rating if missed
+						
+						if(type == 6 && ei != null)
+							accessed_cnt[smid-1]= accessed_cnt[smid-1]+1;
+					}
+				}
+				ui_pred.insertRating(row_ui_pred); //SMFactory
 			}
+			fs_uu_sim.close();
 		}
+		catch(IOException ie){
+			ie.printStackTrace();
+			System.exit(1);
+		}
+		
 		if(type == 2){
 			double avg= 0.0;
 			
-			//recommendation lists for all users
-			int[][] ui_recIdx= new int[nuser][nitem];
+			//recommendation lists for all users (needs to be fixed!) : 2015yr
+			int[][] ui_recIdx= new int[nuser][nrec_size]; //[nuser][nrec_size]
 			for(int i=0;i<nuser;i++){
 				double sum_top= 0;
 				double sum_bot= 0;
 				
-				ui_recIdx[i]= Tools.sortTopK(ui_pred[i], nitem); //smid-1
+				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
 				
 				for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
 					sum_bot++;
-					if(ui_test[i][ui_recIdx[i][ii]] > u_avg_rating[i])
+					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,ui_recIdx[i][ii]);
+					if(ei != null && ei.getRating() > u_avg_rating[i])
 						sum_top++;
 					/**
 					if(ui_pred[i][ui_recIdx[i][ii]] > u_avg_rating[i]){
@@ -498,10 +531,11 @@ public class KNearestNeighbor {
 				double sum_top= 0;
 				double sum_bot= 0;
 				
-				ui_recIdx[i]= Tools.sortTopK(ui_pred[i], nitem); //smid-1
+				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
 				
 				for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
-					if(ui_test[i][ui_recIdx[i][ii]] > u_avg_rating[i])
+					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,ui_recIdx[i][ii]);
+					if(ei != null && ei.getRating() > u_avg_rating[i])
 						sum_top++;
 					else
 						sum_bot++;
@@ -522,9 +556,9 @@ public class KNearestNeighbor {
 			//int nrec_item= 20;
 			
 			//recommendation lists for all users
-			int[][] ui_recIdx= new int[nuser][nitem];
+			int[][] ui_recIdx= new int[nuser][nrec_size];
 			for(int i=0;i<nuser;i++){
-				ui_recIdx[i]= Tools.sortTopK(ui_pred[i], nitem); //smid-1
+				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
 			}
 			
 			int count= 0;
@@ -553,10 +587,10 @@ public class KNearestNeighbor {
 			double sum_bot= 0;
 			
 			//recommendation lists for all users
-			int[][] ui_recIdx= new int[nuser][nitem];
+			int[][] ui_recIdx= new int[nuser][nrec_size];
 			int[] recommended= new int[nitem];
 			for(int i=0;i<nuser;i++){
-				ui_recIdx[i]= Tools.sortTopK(ui_pred[i], nitem); //smid-1
+				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
 				
 				for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
 					recommended[ui_recIdx[i][ii]]= 1;
@@ -577,14 +611,15 @@ public class KNearestNeighbor {
 			double sum_bot= 0;
 			
 			//recommendation lists for all users
-			int[][] ui_recIdx= new int[nuser][nitem];
+			int[][] ui_recIdx= new int[nuser][nrec_size];
 			int[] recommended= new int[nitem];
 			for(int i=0;i<nuser;i++){
-				ui_recIdx[i]= Tools.sortTopK(ui_pred[i], nitem); //smid-1
+				ui_recIdx[i]= Tools.sortTopK(ui_pred.getRowRating(i), nrec_size); //smid-1
 				
 				int full= 1;
 				for(int ii=0;ii<nrec_size;ii++){ //iterate each rec list
-					if(ui_pred[i][ui_recIdx[i][ii]] <= u_avg_rating[i]){
+					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,ui_recIdx[i][ii]);
+					if(ei != null && ei.getRating() <= u_avg_rating[i]){
 						full= 0;
 					}
 				}
@@ -668,10 +703,13 @@ public class KNearestNeighbor {
 		double sumBot= 0.0;
 		int neighbor_rated= 0;
 		
+		FileStorage fs_uu_sim = new FileStorage("knn_uu_sim.txt");
 		for(int i=0;i<neighbor.length;i++){
-			if(ui_train[neighbor[i]-1][smid-1] != 0.0){
-				sumTop+= (ui_train[neighbor[i]-1][smid-1] - u_avg_rating[neighbor[i]-1]) * uu_sim[suid-1][neighbor[i]-1];
-				sumBot+= Math.abs(uu_sim[suid-1][neighbor[i]-1]);
+			EntryInfo ei = (EntryInfo) ui_train.getEntry(neighbor[i]-1,smid-1);
+			//if(ui_train[neighbor[i]-1][smid-1] != 0.0){
+			if(ei != null && ei.getRating() != 0.0){
+				sumTop+= (ei.getRating() - u_avg_rating[neighbor[i]-1]) * fs_uu_sim.randAccess(suid-1)[neighbor[i]-1];
+				sumBot+= Math.abs(fs_uu_sim.randAccess(suid-1)[neighbor[i]-1]);
 				neighbor_rated++;
 			}
 			else{ //remove this? smoothing by user-genre preference
