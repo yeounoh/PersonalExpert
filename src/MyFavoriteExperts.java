@@ -222,51 +222,53 @@ public class MyFavoriteExperts {
 						//String p_optimal_sim = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
 						String p_optimal_exp = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"_s"+sparse_month[di]+"_exp.txt"; //wdir+"/test.txt"; //
 						
-						//RandomSearch rs = new RandomSearch(p_train_v, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
+						RandomSearch rs = new RandomSearch(p_train_v, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
 						
 						//rs.findExperts(p_optimal_sim, k[i], 1); //const_type = 1
-						//rs.findExperts(p_optimal_exp, k[i], 2); //const_type = 2
+						rs.findExperts(p_optimal_exp, k[i], 2); //const_type = 2
 
 						try{
-							RandomSearch rs= new RandomSearch(p_train, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
+							//RandomSearch rs= new RandomSearch(p_train, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
 							
 //							double mae_sim= rs.rsEval(p_optimal_sim, k[i], 1); //mae
 //							double precision_sim= rs.rsEval(p_optimal_sim, k[i], 2); //hit ratio
 //							double recall_sim= rs.rsEval(p_optimal_sim, k[i], 3); //recall
 							
-							double mae_exp= rs.rsEval(p_optimal_exp, k[i], 1); //mae
-							double precision_exp= rs.rsEval(p_optimal_exp, k[i], 2); //precision
-							double recall_exp= rs.rsEval(p_optimal_exp, k[i], 3); //recall
+							double[] output = rs.rsEval(p_optimal_exp, k[i], 1);
+							//double mae_exp= rs.rsEval(p_optimal_exp, k[i], 1); //mae
+							//double precision_exp= rs.rsEval(p_optimal_exp, k[i], 2); //precision
+							//double recall_exp= rs.rsEval(p_optimal_exp, k[i], 3); //recall
 							
 //							bw.write(""+k[i]+" "+(f+1)+" "+mae_sim+" "+mae_exp);
-							bw.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+mae_exp);
+							bw.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+output[0]);
 							bw.newLine();
 							bw.flush();
 					
-							bw2.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+precision_exp);
+							bw2.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+output[1]);
 							bw2.newLine();
 							bw2.flush();
 							
-							bw3.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+recall_exp);
+							bw3.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+output[2]);
 							bw3.newLine();
 							bw3.flush();
 							
 							for(int si=0;si<nrec_size.length;si++){
 //								double precision_exp= rs.rsEval2(p_optimal_exp, k[i], 2, nrec_size[si]); //precision
 //								double recall_exp= rs.rsEval2(p_optimal_exp, k[i], 3, nrec_size[si]); //recall
-								double diversity= rs.rsEval2(p_optimal_exp, k[i], 4, nrec_size[si]); //diversity
-								double item_cov= rs.rsEval2(p_optimal_exp, k[i], 6, nrec_size[si]);
-								double user_cov= rs.rsEval2(p_optimal_exp, k[i], 7, nrec_size[si]);
+								double[] output2 = rs.rsEval2(p_optimal_exp, k[i], 4, nrec_size[si]);
+								//double diversity= rs.rsEval2(p_optimal_exp, k[i], 4, nrec_size[si]); //diversity
+								//double item_cov= rs.rsEval2(p_optimal_exp, k[i], 6, nrec_size[si]);
+								//double user_cov= rs.rsEval2(p_optimal_exp, k[i], 7, nrec_size[si]);
 								
-								bw4.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+diversity);
+								bw4.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+output2[0]);
 								bw4.newLine();
 								bw4.flush();
 								
-								bw6.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+item_cov);
+								bw6.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+output2[1]);
 								bw6.newLine();
 								bw6.flush();
 								
-								bw7.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+user_cov);
+								bw7.write(""+sparse_month[di]+" "+k[i]+" "+(f+1)+" "+ nrec_size[si]+" "+output2[2]);
 								bw7.newLine();
 								bw7.flush();
 								

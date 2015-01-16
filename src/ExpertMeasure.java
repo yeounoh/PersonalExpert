@@ -7,6 +7,7 @@ import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Random;
 
@@ -19,22 +20,26 @@ import java.util.Random;
  */
 public class ExpertMeasure {
 
-	private double[][] ui_train;
-	private double[][] ui_train_sparse;
-	private double[][] ui_test;
+	//private double[][] ui_train;
+	private SMFactory ui_train;
+	//private double[][] ui_train_sparse;
+	private SMFactory ui_train_sparse;
+	//private double[][] ui_test;
+	private SMFactory ui_test;
 	private double[] u_avg_rating;
 	private double[] i_avg_rating;
-	private double[][] uu_sim;
-	private int[][] uu_uicount; //unknown item count
-	private int[][] uu_cicount; //common item count
+	//private double[][] uu_sim; //use FileStorage
+	//private int[][] uu_uicount; //unknown item count, use FileStorage
+	//private int[][] uu_cicount; //common item count, use FileStorage
 	private int[] u_icount;
 	private int[] i_ucount;
-	private long[][] ui_time;
+	//private long[][] ui_time;
+	private SMFactory ui_time;
 	private long[] i_release;
 	private long ref_time; //22-Apr-1998
 	private long cut_time;
-	private double[][][] uu_expertise; 
-	
+	//private double[][][] uu_expertise; use FileStorage
+	private double[][] norm_param;
 	
 	private int nuser;
 	private int nitem;
@@ -75,18 +80,19 @@ public class ExpertMeasure {
 	 * @param pdir 
 	 */
 	public void EMsetUserItemTest(String p_train, String p_test, String p_train_t, String p_release, int nuser, int nitem){	
-		ui_train= new double[nuser][nitem];
-		ui_test= new double[nuser][nitem];
+		ui_train= new SMFactory(nuser,nitem);
+		ui_test= new SMFactory(nuser,nitem);
 		u_avg_rating= new double[nuser];
 		i_avg_rating= new double[nitem];
-		uu_sim= new double[nuser][nuser];
-		uu_uicount= new int[nuser][nuser]; //relative unknown item access
-		uu_cicount= new int[nuser][nuser]; //common item access
+		//uu_sim= new double[nuser][nuser];
+		//uu_uicount= new int[nuser][nuser]; //relative unknown item access
+		//uu_cicount= new int[nuser][nuser]; //common item access
 		u_icount= new int[nuser];
 		i_ucount= new int[nitem];
-		ui_time= new long[nuser][nitem];
+		//ui_time= new long[nuser][nitem];
 		i_release= new long[nitem];
-		uu_expertise= new double[nuser][nuser][7];
+		//uu_expertise= new double[nuser][nuser][7]; //FileStorage, 7 files
+		norm_param= new double[7][2]; //exp_type 3
 		
 		try{
 			FileInputStream fis= null;
@@ -95,20 +101,10 @@ public class ExpertMeasure {
 			String line;
 			
 			fis= new FileInputStream(p_train);
-			br= new BufferedReader(new InputStreamReader(fis));
+			br= new BufferedReader(new InputStreamReader(fis));	
 			double r_cnt= 0;
 			while((line= br.readLine())!=null){
-				tokens= line.split("[,]");
-				int suid= Integer.parseInt(tokens[0]);
-				for(int i=1;i<tokens.length;i++){
-					tokens2= tokens[i].split("[:]");
-					int smid= Integer.parseInt(tokens2[0]);
-					double rating= (double) Integer.parseInt(tokens2[1]);
-					ui_train[suid-1][smid-1]= rating;
-					
-					if(rating > 0)
-						r_cnt++;
-				}
+				r_cnt += ui_train.insertRating(line);
 			}
 			br.close();
 			
@@ -117,56 +113,35 @@ public class ExpertMeasure {
 			double sparsity_orig= (1-(r_cnt/(double)(nuser*nitem)));
 			System.out.println("Training set sparsity: "+sparsity_orig);
 			
-			/**
-			if(delta_sparse != -1.0){
-				int remove_cnt= (int) Math.ceil(delta_sparse/100 * nitem);
-				Random rs= new Random();
-				
-				for(int i=0;i<nuser;i++){
-					int removed_cnt= 0, cnt= 0;
-					while(cnt < nitem && removed_cnt < remove_cnt){
-						int j= rs.nextInt(nitem);
-						if(ui_train[i][j] > 0){
-							ui_train[i][j]= 0;
-							removed_cnt++;
-							r_cnt--;
-						}
-						cnt++;
-					}
-				}
-				double sparsity_new= (1-(r_cnt/(double)(nuser*nitem)));
-				System.out.println("Training set new sparsity: "+sparsity_new);
-			}
-			*/
-			
 			fis= new FileInputStream(p_test);
-			br= new BufferedReader(new InputStreamReader(fis));				
+			br= new BufferedReader(new InputStreamReader(fis));
 			while((line= br.readLine())!=null){
+				ui_test.insertRating(line);
+				/**
 				tokens= line.split("[,]");
 				int suid= Integer.parseInt(tokens[0]);
 				for(int i=1;i<tokens.length;i++){
 					tokens2= tokens[i].split("[:]");
 					int smid= Integer.parseInt(tokens2[0]);
 					double rating= (double) Integer.parseInt(tokens2[1]);
-					ui_test[suid-1][smid-1]= rating;
+					i_test[smid-1]= 1;
 				}
+				*/
 			}
 			br.close();
-			
+												
 			fis= new FileInputStream(p_train_t);
 			br= new BufferedReader(new InputStreamReader(fis));
 			while((line= br.readLine())!=null){
+				ui_train.insertTimestamp(line);
 				tokens= line.split("[,]");
 				int suid= Integer.parseInt(tokens[0]);
 				for(int i=1;i<tokens.length;i++){
 					tokens2= tokens[i].split("[:]");
 					int smid= Integer.parseInt(tokens2[0]);
 					long timestamp= Long.parseLong(tokens2[1]);
-					ui_time[suid-1][smid-1]= timestamp; 
-					
-					if(sparse_month != -1 && timestamp > cut_time && ui_train_sparse[suid-1][smid-1] > 0){
-						//ui_test[suid-1][smid-1]= 0;
-						ui_train_sparse[suid-1][smid-1]= 0;
+					if(sparse_month != -1 && timestamp > cut_time){
+						ui_train_sparse.deleteRating(suid-1, smid-1);
 						r_cnt--;
 					}
 				}
@@ -185,108 +160,155 @@ public class ExpertMeasure {
 				i_release[mid-1]= release;
 			}
 			br.close();
-		}catch (Exception e){
-			System.err.println("Error: " + e.getMessage());
+			
+			for(int i=0;i<nuser;i++){ //rows or users
+				double avgsum=0;
+				int cnt= 0;
+				for(int j=0;j<nitem;j++){ //cols or items
+					EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(i, j);
+					if(ei != null){
+						cnt++;
+						avgsum+=ei.getRating();
+					}
+				}
+				u_avg_rating[i]= avgsum/((double) cnt);
+				u_icount[i]= cnt;
+				
+				if(u_icount[i] == 0)
+					u_avg_rating[i] = 0;
+			}
+			
+			for(int j=0;j<nitem;j++){
+				int cnt= 0;
+				for(int i=0;i<nuser;i++){
+					EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(i, j);
+					if(ei != null)
+						cnt++;
+				}
+				i_ucount[j]= cnt;
+			}
+			
+			//use file to store uu_sim
+			FileOutputStream fos1= new FileOutputStream("em_uu_sim.txt");
+			BufferedWriter bw1= new BufferedWriter(new OutputStreamWriter(fos1));
+			FileOutputStream fos2= new FileOutputStream("em_uu_uicount.txt");
+			BufferedWriter bw2= new BufferedWriter(new OutputStreamWriter(fos2));
+			FileOutputStream fos3= new FileOutputStream("em_uu_cicount.txt");
+			BufferedWriter bw3= new BufferedWriter(new OutputStreamWriter(fos3));
+			Similarity sim= new Similarity();
+			for(int i=0;i<nuser;i++){
+				double[] r_i = ui_train_sparse.getRowRating(i);
+				double[] r_0 = ui_train_sparse.getRowRating(0);
+				String sim_i = ""+sim.pearsonCorr(r_i,u_avg_rating[i],r_0,u_avg_rating[0]);
+				int cnt_ij= 0, cnt_ci= 0;
+				for(int k=0;k<nitem;k++){ //for each item
+					if((r_i[k]!=0) && (r_0[k]==0))
+						cnt_ij++;
+					if((r_i[k]!=0) && (r_0[k]!= 0)){
+						cnt_ci++;
+					}	
+				}
+				String ui_count_i = ""+cnt_ij;
+				String ci_count_i = ""+cnt_ci;
+				
+				for(int j=1;j<nuser;j++){
+					double[] r_j = ui_train_sparse.getRowRating(j);
+					sim_i += " "+sim.pearsonCorr(r_i,u_avg_rating[i],r_j,u_avg_rating[j]);
+					cnt_ij= 0; cnt_ci= 0;
+					for(int k=0;k<nitem;k++){ //for each item
+						if((r_i[k]!=0) && (r_j[k]==0))
+							cnt_ij++;
+						if((r_i[k]!=0) && (r_j[k]!= 0)){
+							cnt_ci++;
+						}	
+					}
+					ui_count_i += " "+cnt_ij;
+					ci_count_i += " "+cnt_ci;
+				}
+				bw1.write(sim_i);bw1.newLine();bw1.flush();
+				bw2.write(ui_count_i);bw2.newLine();bw2.flush();
+				bw3.write(ci_count_i);bw3.newLine();bw3.flush();
+			}
+			bw1.close();bw2.close();bw3.close();		
+			
+			for(int j=0;j<nitem;j++){
+				int iu_cnt= 0;
+				for(int i=0;i<nuser;i++){
+					EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(i,j);
+					if(ei != null && ei.getRating() != 0){
+						i_avg_rating[j]= i_avg_rating[j]+ei.getRating();
+						iu_cnt++;
+					}
+				}
+				if(iu_cnt != 0 )
+					i_avg_rating[j]= i_avg_rating[j]/iu_cnt;
+				else
+					i_avg_rating[j]= 0.0;
+			}
+			
+			//expertise
+			FileStorage fs_uu_sim = new FileStorage("em_uu_sim.txt");
+			FileStorage fs_uicount = new FileStorage("em_uicount.txt");
+			FileStorage fs_cicount = new FileStorage("em_cicount.txt");
+			
+			fs_uu_sim.open(); fs_uicount.open(); fs_cicount.open();
+			for(int i=0;i<nuser;i++){
+				double[] uu_sim = fs_uu_sim.seqAccess();
+				double[] uicount = fs_uicount.seqAccess();
+				double[] cicount = fs_cicount.seqAccess();
+				for(int j=0;j<nuser;j++){
+					double[] info = new double[3];
+					info[0] = uu_sim[j]; info[1] = uicount[j]; info[2] = cicount[j];
+					double[] exps= getExpertise(info, i+1,j+1,3); //type 3: double[7]
+					norm_param[0][0] += exps[0]; norm_param[1][0] += exps[1]; norm_param[2][0] += exps[2]; 
+					norm_param[3][0] += exps[3]; norm_param[4][0] += exps[4]; norm_param[5][0] += exps[5]; 
+					norm_param[6][0] += exps[6];
+				}
+			}
+			for(int i=0;i<norm_param.length;i++){
+				norm_param[i][0] = norm_param[i][0]/((double) nuser*nuser);
+			}
+			fs_uu_sim.close(); fs_uicount.close(); fs_cicount.close();
+			
+			double std= 0.0;
+			fs_uu_sim.open(); fs_uicount.open(); fs_cicount.open();
+			for(int i=0;i<nuser;i++){
+				double[] uu_sim = fs_uu_sim.seqAccess();
+				double[] uicount = fs_uicount.seqAccess();
+				double[] cicount = fs_cicount.seqAccess();
+				for(int j=0;j<nuser;j++){
+					double[] info = new double[3];
+					info[0] = uu_sim[j]; info[1] = uicount[j]; info[2] = cicount[j];
+					double[] exps= getExpertise(info, i+1,j+1,3); //type 3: double[7]
+					norm_param[0][1] += (exps[0] - norm_param[0][0])*(exps[0] - norm_param[0][0]); 
+					norm_param[1][1] += (exps[1] - norm_param[1][0])*(exps[1] - norm_param[1][0]); 
+					norm_param[2][1] += (exps[2] - norm_param[2][0])*(exps[2] - norm_param[2][0]); 
+					norm_param[3][1] += (exps[3] - norm_param[3][0])*(exps[3] - norm_param[3][0]); 
+					norm_param[4][1] += (exps[4] - norm_param[4][0])*(exps[4] - norm_param[4][0]); 
+					norm_param[5][1] += (exps[5] - norm_param[5][0])*(exps[5] - norm_param[5][0]); 
+					norm_param[6][1] += (exps[6] - norm_param[6][0])*(exps[6] - norm_param[6][0]);
+				}
+			}
+			for(int i=0;i<norm_param.length;i++){
+				norm_param[i][1] = Math.sqrt(norm_param[i][1]/((double) nuser*nuser));
+			}
+			fs_uu_sim.close(); fs_uicount.close(); fs_cicount.close();
+			
+			/**
+			for(int i=0;i<nuser;i++){
+				for(int j=0;j<nuser;j++){
+					for(int k=0;k<7;k++){
+						uu_expertise[i][j][k]= (uu_expertise[i][j][k]-norm_param[k][0])/norm_param[k][1];
+					}
+				}
+			}
+			*/
+		}
+		catch (Exception e){
 			e.printStackTrace();
 			System.exit(1);
 		}
-				
-		for(int i=0;i<ui_train_sparse.length;i++){ //rows or users
-			double avgsum=0;
-			int cnt= 0;
-			for(int j=0;j<ui_train_sparse[0].length;j++){ //cols or items
-				if(ui_train_sparse[i][j]!=0){
-	        		cnt++;
-	        		avgsum+=ui_train_sparse[i][j];
-	        	}
-			}
-			u_avg_rating[i]= avgsum/((double) cnt);
-			u_icount[i]= cnt;
-		}
 		
-		for(int j=0;j<ui_train_sparse[0].length;j++){
-			int cnt= 0;
-			for(int i=0;i<ui_train.length;i++){
-				if(ui_train_sparse[i][j]!=0)
-					cnt++;
-			}
-			i_ucount[j]= cnt;
-		}
-		
-		Similarity sim= new Similarity();
-		for(int i=0;i<ui_train_sparse.length;i++){
-			for(int j=i;j<ui_train_sparse.length;j++){ //upper half
-				uu_sim[i][j]= sim.pearsonCorr(ui_train_sparse[i],u_avg_rating[i],ui_train_sparse[j],u_avg_rating[j]);
-				uu_sim[j][i]= uu_sim[i][j];
-				
-				double[] temp_ui= ui_train_sparse[i];
-				double[] temp_uj= ui_train_sparse[j];
-				int cnt_ij= 0, cnt_ji= 0;
-				for(int k=0;k<temp_ui.length;k++){ //for each item
-					if((temp_ui[k]!=0) && (temp_uj[k]==0))
-						cnt_ij++;
-					if((temp_ui[k]==0) && (temp_uj[k]!=0))
-						cnt_ji++;
-					if((temp_ui[k]!=0) && (temp_uj[k]!= 0)){
-						uu_cicount[i][j]= uu_cicount[i][j] + 1;
-					}
-						
-				}
-				uu_uicount[i][j]= cnt_ij; 
-				uu_uicount[j][i]= cnt_ji;
-				uu_cicount[j][i]= uu_cicount[i][j];
-			}
-		}
-		
-		for(int j=0;j<nitem;j++){
-			int iu_cnt= 0;
-			for(int i=0;i<nuser;i++){
-				if(ui_train_sparse[i][j] != 0){
-					i_avg_rating[j]= i_avg_rating[j]+ui_train_sparse[i][j];
-					iu_cnt++;
-				}
-			}
-			if(iu_cnt !=0 )
-				i_avg_rating[j]= i_avg_rating[j]/iu_cnt;
-			else
-				i_avg_rating[j]= 0.0;
-		}
-		
-		//expertise
-		for(int i=0;i<nuser;i++){
-			for(int j=0;j<nuser;j++){
-				uu_expertise[i][j]= getExpertise(i+1,j+1,3);
-			}
-		}
-		
-		double[][] norm_param= new double[7][2];
-		for(int k=0;k<7;k++){
-			double mu= 0.0;
-			for(int i=0;i<nuser;i++){
-				for(int j=0;j<nuser;j++){
-					mu+= uu_expertise[i][j][k];
-				}
-			}
-			norm_param[k][0]= mu/((double) nuser*nuser);
-		}
-		for(int k=0;k<7;k++){
-			double std= 0.0;
-			for(int i=0;i<nuser;i++){
-				for(int j=0;j<nuser;j++){
-					double dev= uu_expertise[i][j][k]-norm_param[k][0];
-					std+= dev*dev;
-				}
-			}
-			norm_param[k][1]= Math.sqrt(std/((double) nuser*nuser));
-		}
-		
-		for(int i=0;i<nuser;i++){
-			for(int j=0;j<nuser;j++){
-				for(int k=0;k<7;k++){
-					uu_expertise[i][j][k]= (uu_expertise[i][j][k]-norm_param[k][0])/norm_param[k][1];
-				}
-			}
-		}
 	}
 	
 	/**
@@ -312,7 +334,7 @@ public class ExpertMeasure {
 			String line;
 			int suid, esuid;
 			
-			int[][] experts= new int[uu_sim.length][uu_sim.length]; //mark who is an expert and who is not
+			//int[][] experts= new int[uu_sim.length][uu_sim.length]; //mark who is an expert and who is not
 			
 			fos= new FileOutputStream(p_svm_train);
 			bw= new BufferedWriter(new OutputStreamWriter(fos));
@@ -334,35 +356,48 @@ public class ExpertMeasure {
 			fis= new FileInputStream(p_optimal);
 			br= new BufferedReader(new InputStreamReader(fis));
 			
-			int[] selected_users = new int[line_cnt]; //find experts for each of these selected users
+			//int[] selected_users = new int[line_cnt]; //find experts for each of these selected users
 			
-			int suser_cnt = 0, pos_cnt= 0;
-			while((line = br.readLine())!=null){
-				if(line.length() == 0) 
-					continue; //empty line (usually the last line)
+			FileStorage fs_uu_sim = new FileStorage("em_uu_sim.txt");
+			FileStorage fs_uicount = new FileStorage("em_uu_uicount.txt");
+			FileStorage fs_cicount = new FileStorage("em_uu_cicount.txt");
+			fs_uu_sim.open(); fs_uicount.open(); fs_cicount.open();
+			
+			int pos_cnt= 0, neg_cnt= 0;
+			for(int i=0;i<nuser;i++){
+				line = br.readLine();
 				
 				tokens= line.split("[,]"); //"\\s+"
 				suid= Integer.parseInt(tokens[0]); //suid
-				selected_users[suser_cnt]= suid; //now it shall contain all users
-					
-				for(int i=1;i<tokens.length;i++){
-					esuid= Integer.parseInt(tokens[i]);
+				//selected_users[suser_cnt]= suid; //now it shall contain all users
+				HashMap<String,String> pexperts = new HashMap<String,String>();
+				
+				double[] uu_sim = fs_uu_sim.seqAccess();
+				double[] uicount = fs_uicount.seqAccess();
+				double[] cicount = fs_cicount.seqAccess();
+				
+				for(int j=1;j<tokens.length;j++){
+					esuid= Integer.parseInt(tokens[j]);
 					if(esuid == suid)
 						continue;
 					
-					double[] texps = uu_expertise[suid-1][esuid-1]; //getExpertise(suid,esuid,exp_type); //exp_type
-										
+					//double[] texps = uu_expertise[suid-1][esuid-1]; //getExpertise(suid,esuid,exp_type); //exp_type
+					double[] info = new double[3];
+					info[0] = uu_sim[esuid-1]; info[1] = uicount[esuid-1]; info[2] = cicount[esuid-1];
+					double[] texps= getExpertise(info, suid,esuid,3); 
+					
 					//if((exp_type != 3) && (texps[0] < 0.3)) //filtering(not needed?!): MLDM'13
 						//continue;
 					
-					if(u_icount[esuid-1] == 0)
+					if(info[1] == 0)
 						continue;
 										
-					experts[suid-1][esuid-1]= 1;
+					//experts[suid-1][esuid-1]= 1;
+					pexperts.put(""+esuid,"");
 					
 					String psample= "1";
-					for(int j=0;j<texps.length;j++){
-						psample= psample + " " + (j+1) + ":" + texps[j];
+					for(int k=0;k<texps.length;k++){
+						psample= psample + " " + (k+1) + ":" + texps[k];
 					}
 					
 					bw.write(psample);
@@ -375,32 +410,16 @@ public class ExpertMeasure {
 					
 					pos_cnt++;
 				}
-				suser_cnt++;
-			}
-			
-			//within the dataset (selected users), mark other users who are not seen as experts
-			for(int i=0;i<selected_users.length;i++){ //selected_users.length
-				for(int j=0;j<experts.length;j++){
-					int user_i= selected_users[i];
-					int user_j= j+1;//selected_users[j];
-					
-					if(user_i == user_j)
-						continue;
-					
-					if(experts[user_i-1][user_j-1] == 0){
-						experts[user_i-1][user_j-1]= -1;
-					}
-				}
-			}
-			
-			int neg_cnt= 0;
-			for(int i=0;i<ui_test.length;i++){
-				for(int j=0;j<ui_test.length;j++){
-					
+				
+				for(int j=0;j<nuser;j++){
+					esuid = j+1;
 					//within the selected user group only, we either have positive/negative data
-					if(experts[i][j] == -1){ 
-						double[] texps = uu_expertise[i][j];//getExpertise(i+1,j+1,exp_type);
-												
+					if(!pexperts.containsKey(""+(j+1))){
+						//double[] texps = uu_expertise[i][j];//getExpertise(i+1,j+1,exp_type);
+						double[] info = new double[3];
+						info[0] = uu_sim[esuid-1]; info[1] = uicount[esuid-1]; info[2] = cicount[esuid-1];
+						double[] texps= getExpertise(info, suid,esuid,3); 
+						
 						//if((exp_type != 3) && (texps[0] < 0.3)) //filtering(not needed?!): MLDM'13
 							//continue;
 						
@@ -419,11 +438,10 @@ public class ExpertMeasure {
 						
 						neg_cnt++;
 					}
-				}
-			} 
-			bw.close();
-			bw2.close();
-			br.close();
+				} 
+			}
+			fs_uu_sim.close(); fs_uicount.close(); fs_cicount.close();
+			bw.close();bw2.close();br.close();
 			
 			System.out.println("pos cnt: "+pos_cnt+" neg cnt: "+neg_cnt);
 			System.out.println("pos/neg: " + ((double)pos_cnt/(double)neg_cnt));
@@ -441,24 +459,24 @@ public class ExpertMeasure {
 	 * @param exp_type
 	 * @return double[]  
 	 */
-public double[] getExpertise(int suid, int esuid, int exp_type){
+	public double[] getExpertise(double[] info, int suid, int esuid, int exp_type){
 		
 		double[] exps = new double[4];
 		
 		if(exp_type == 0){ //KIIS'12: personalized expertise
-			
-			exps[0]= uu_sim[suid-1][esuid-1];
-			exps[1]= ((double)(u_icount[esuid-1]-u_icount[suid-1]))/ui_train_sparse[0].length; 
-			exps[2]= ((double) uu_uicount[esuid-1][suid-1])/ui_train_sparse[0].length; 
+			exps[0]= info[0]; 
+			exps[1]= ((double)(u_icount[esuid-1]-u_icount[suid-1]))/nitem; 
+			exps[2]= ((double) info[1])/nitem; 
 			exps[3]= (u_avg_rating[esuid-1]-u_avg_rating[suid-1])/4.0;
 		}
 		else if(exp_type == 1){ // MLDM'13: personalized expertise
 			
 			//early adoption degree
 			double ea= 0.0;
-			for(int i=0;i<ui_train_sparse[0].length;i++){
-				if(ui_train_sparse[esuid-1][i] != 0.0){
-					ea= ea + ((double) (ref_time - ui_time[esuid-1][i]))/((double) (ref_time - i_release[i]));
+			for(int i=0;i<nitem;i++){
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(esuid-1,i);
+				if(ei != null){
+					ea= ea + ((double) (ref_time - ei.getTimestamp()))/((double) (ref_time - i_release[i]));
 				}
 			}
 			ea= ea/u_icount[esuid-1];
@@ -478,8 +496,9 @@ public double[] getExpertise(int suid, int esuid, int exp_type){
 			
 			//niche item access degree
 			double na= 0.0;
-			for(int i=0;i<ui_train_sparse[0].length;i++){
-				if(ui_train_sparse[esuid-1][i] != 0.0){
+			for(int i=0;i<nitem;i++){
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(esuid-1,i);
+				if(ei != null){
 					na= na + Math.log(2)/Math.log(i_ucount[i]+1);
 				}
 			}
@@ -487,7 +506,7 @@ public double[] getExpertise(int suid, int esuid, int exp_type){
 			if(u_icount[esuid-1] == 0)
 				na= 0.0;
 			
-			exps[0]= uu_sim[suid-1][esuid-1];
+			exps[0]= info[0];
 			exps[1]= ea * exps[0]; 
 			exps[2]= ha * exps[0]; 
 			exps[3]= na * exps[0];
@@ -496,9 +515,10 @@ public double[] getExpertise(int suid, int esuid, int exp_type){
 			
 			//early adoption degree
 			double ea= 0.0;
-			for(int i=0;i<ui_train_sparse[0].length;i++){
-				if(ui_train_sparse[esuid-1][i] != 0.0){
-					ea= ea + ((double) (ref_time - ui_time[esuid-1][i]))/((double) (ref_time - i_release[i]));
+			for(int i=0;i<nitem;i++){
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(esuid-1,i);
+				if(ei != null){
+					ea= ea + ((double) (ref_time - ei.getTimestamp()))/((double) (ref_time - i_release[i]));
 				}
 			}
 			ea= ea/u_icount[esuid-1];
@@ -518,8 +538,9 @@ public double[] getExpertise(int suid, int esuid, int exp_type){
 			
 			//niche item access degree
 			double na= 0.0;
-			for(int i=0;i<ui_train_sparse[0].length;i++){
-				if(ui_train_sparse[esuid-1][i] != 0.0){
+			for(int i=0;i<nitem;i++){
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(esuid-1,i);
+				if(ei != null){
 					na= na + Math.log(2)/Math.log(i_ucount[i]+1);
 				}
 			}
@@ -527,7 +548,7 @@ public double[] getExpertise(int suid, int esuid, int exp_type){
 			if(u_icount[esuid-1] == 0)
 				na= 0.0;
 			
-			exps[0]= uu_sim[suid-1][esuid-1];
+			exps[0]= info[0];
 			exps[1]= ea; 
 			exps[2]= ha; 
 			exps[3]= na;
@@ -537,9 +558,10 @@ public double[] getExpertise(int suid, int esuid, int exp_type){
 			
 			//early adoption degree
 			double ea= 0.0;
-			for(int i=0;i<ui_train_sparse[0].length;i++){
-				if(ui_train_sparse[esuid-1][i] != 0.0){
-					ea= ea + ((double) (ref_time - ui_time[esuid-1][i]))/((double) (ref_time - i_release[i]));
+			for(int i=0;i<nitem;i++){
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(esuid-1,i);
+				if(ei != null){
+					ea= ea + ((double) (ref_time - ei.getTimestamp()))/((double) (ref_time - i_release[i]));
 				}
 			}
 			ea= ea/u_icount[esuid-1];
@@ -551,8 +573,9 @@ public double[] getExpertise(int suid, int esuid, int exp_type){
 			
 			//niche item access degree
 			double na= 0.0;
-			for(int i=0;i<ui_train_sparse[0].length;i++){
-				if(ui_train_sparse[esuid-1][i] != 0.0){
+			for(int i=0;i<nitem;i++){
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(esuid-1,i);
+				if(ei != null){
 					na= na + Math.log(2)/Math.log(i_ucount[i]+1);
 				}
 			}
@@ -561,23 +584,24 @@ public double[] getExpertise(int suid, int esuid, int exp_type){
 				na= 0.0;
 			
 			//Unknown item access degree
-			double ua= Math.log(uu_uicount[esuid-1][suid-1]+1);
+			double ua= Math.log(info[1]+1);
 			
 			//common item access degree
-			double ca= Math.log(uu_cicount[esuid-1][suid-1]+1);
+			double ca= Math.log(info[2]+1);
 			
 			//eccentric rating degree
 			double er= 0.0;
-			for(int i=0;i<ui_train_sparse[0].length;i++){
-				if(ui_train_sparse[esuid-1][i] != 0.0){
-					er= er + Math.log(Math.abs(i_avg_rating[i]-ui_train_sparse[esuid-1][i])+1)/Math.log(5);
+			for(int i=0;i<nitem;i++){
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(esuid-1,i);
+				if(ei != null){
+					er= er + Math.log(Math.abs(i_avg_rating[i]-ei.getRating())+1)/Math.log(5);
 				}
 			}
 			er= er/u_icount[esuid-1];
 			if(u_icount[esuid-1] == 0)
 				er= 0.0;
 			
-			exps[0]= uu_sim[suid-1][esuid-1];
+			exps[0]= info[0];
 			exps[1]= ea;
 			exps[2]= ha;
 			exps[3]= na;
