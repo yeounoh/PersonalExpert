@@ -53,7 +53,7 @@ public class RandomSearch {
 			ref_time = new SimpleDateFormat("dd-MMMM-yyyy", Locale.ENGLISH).parse("22-APR-1998").getTime()/1000;
 		} 
 		catch (ParseException e) {
-			System.err.println("Error@ExpertMeasure()");
+			System.err.println("Error@RandomSearch()");
 		}
 
 		RSsetUserItemTest(p_train, p_valid, p_test, p_train_t, p_release);
@@ -69,7 +69,7 @@ public class RandomSearch {
 			cut_time = ref_time - 60*60*24*30*sparse_month;
 		} 
 		catch (ParseException e) {
-			System.err.println("Error@ExpertMeasure()");
+			System.err.println("Error@RandomSearch()");
 		}
 		
 		RSsetUserItemTest(p_train, p_valid, p_test, p_train_t, p_release);
@@ -257,8 +257,8 @@ public class RandomSearch {
 			
 			//expertise
 			FileStorage fs_uu_sim = new FileStorage("rs_uu_sim.txt");
-			FileStorage fs_uicount = new FileStorage("rs_uicount.txt");
-			FileStorage fs_cicount = new FileStorage("rs_cicount.txt");
+			FileStorage fs_uicount = new FileStorage("rs_uu_uicount.txt");
+			FileStorage fs_cicount = new FileStorage("rs_uu_cicount.txt");
 			
 			fs_uu_sim.open(); fs_uicount.open(); fs_cicount.open();
 			for(int i=0;i<nuser;i++){
@@ -368,7 +368,7 @@ public class RandomSearch {
 					for(int j=0;j<nuser;j++){
 						double[] info = new double[3];
 						info[0] = uu_sim[j]; info[1] = uicount[j]; info[2] = cicount[j];
-						double[] tmp= getExpertise(info, i,j,3); //2- common expertise?
+						double[] tmp= getExpertise(info,i+1,j+1,3); //2- common expertise?
 						expertise[j] = Tools.vector_magnitude(new double[]{tmp[1], tmp[2], tmp[3]});
 					}
 					search = Tools.sortTopK(expertise, search_size); //uid - 1
@@ -487,8 +487,8 @@ public class RandomSearch {
 			fs_uu_sim.close(); fs_uicount.close(); fs_cicount.close();
 			bw.close();
 		}catch (Exception e){ 
-			System.err.println("Error@findExperts(): " + e.getMessage());
 			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 		
@@ -515,6 +515,8 @@ public class RandomSearch {
 		double precision= 0.0; //type=2
 		double recall= 0.0; // type=3
 		
+		FileStorage fs_uu_sim = new FileStorage("rs_uu_sim.txt");
+		fs_uu_sim.open(); 
 		for(int i=0;i<nuser;i++){
 			int suid= i+1;
 									
@@ -540,8 +542,7 @@ public class RandomSearch {
 				System.exit(1);
 			}
 			
-			FileStorage fs_uu_sim = new FileStorage("rs_uu_sim.txt");
-			fs_uu_sim.open(); 
+			double[] uu_sim = fs_uu_sim.seqAccess();
 			for(int j=0;j<nitem;j++){
 				int smid= j+1;
 				EntryInfo ei = (EntryInfo) ui_test.getEntry(i,j);
@@ -549,8 +550,8 @@ public class RandomSearch {
 					continue;
 				double trating= ei.getRating();
 				
-				double[] uu_sim = fs_uu_sim.seqAccess();
-				double prating= predict(optimal,uu_sim,suid,smid);				
+				
+				double prating= predict(optimal,uu_sim,suid,smid);
 				
 				if(true){
 					mae+= Math.abs(trating-prating);
@@ -569,8 +570,8 @@ public class RandomSearch {
 					}
 				}
 			}
-			fs_uu_sim.close();
 		}
+		fs_uu_sim.close();
 		
 		output[0]= mae/nrating;
 		output[1]= (double) nhit_rec / (double) nrec;

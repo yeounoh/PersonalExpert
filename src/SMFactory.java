@@ -154,6 +154,8 @@ public class SMFactory implements SparseMatrix {
 	 * @return EntryInfo object having byte rating & int timestamp
 	 */
 	public Object getEntry(int row, int col) {
+		if(userList.get(row) == null)
+			return null;
 		return userList.get(row).get(col);
 	}
 	
@@ -248,75 +250,3 @@ public class SMFactory implements SparseMatrix {
 		return new SMFactory(maxUserID,maxItemID,(HashMap<Integer,HashMap>) userList.clone());
 	}
 }
-
-// �����ڷ�
-//File oFile = new File("rating.data");
-//File oFile2 = new File("timestamp.data");
-//
-//FileReader frd = null;
-//BufferedReader brd = null;
-//FileReader frd2 = null;
-//BufferedReader brd2 = null;
-//
-//
-//String rLine = null;
-//String rLine2 = null;
-//
-//SMFactory smFactory = new SMFactory();
-//   
-//try {
-//     frd = new FileReader(oFile);
-//     brd = new BufferedReader(frd);  
-//                                                         
-//     while ((rLine = brd.readLine())!= null) {
-//    	 System.out.println(rLine);
-//    	 smFactory.insertRating(rLine);
-//     }		     
-//     frd.close();
-//     brd.close();
-//} catch (IOException e) {
-//     e.printStackTrace();
-//}
-//
-//try {
-//     frd2 = new FileReader(oFile2);
-//     brd2 = new BufferedReader(frd2);  
-//                                                         
-//     while ((rLine2 = brd2.readLine())!= null) {
-//    	 System.out.println(rLine2);
-//    	 smFactory.insertTimestamp(rLine2);
-//     }		     
-//     frd2.close();
-//     brd2.close();
-//} catch (IOException e) {
-//     e.printStackTrace();
-//}
-//
-// System.out.println("\n------------------\n Print All \n------------------");
-// smFactory.printAll();
-// 
-// System.out.println("\n------------------\n Ư�� ������ ���� (getEntry) \n------------------");
-// System.out.println("user 1 and item 242");
-// System.out.println("raintg: "+((EntryInfo)(smFactory.getEntry(22, 302))).getRating());
-// System.out.println("time stamp: "+((EntryInfo)(smFactory.getEntry(22, 302))).getTimestamp());
-//
-// System.out.println("\n------------------\n user 22�� itme�� ���� rating ���� (getRowRaiting) \n------------------");
-// int lastIndex = smFactory.getMaxItemIndex();
-// int[] ratingArray = smFactory.getRowRating(22);
-// for(int i=0; i<lastIndex; i++) {
-//	 System.out.print(i+":"+ratingArray[i]+" | ");
-// }
-// 
-// System.out.println("\n------------------\n user 1�� item�� ���� timestamp ���� (getRowTimestamp) \n------------------");
-//// int lastIndex = smFactory.getMaxItemIndex();
-// int[] timestampArray = smFactory.getRowTimestamp(22);
-// for(int i=0; i<lastIndex; i++) {
-//	 System.out.print(i+":"+timestampArray[i]+" | ");
-// }
-//
-// System.out.println("\n------------------\n user 1�� item�� ����  ���� (getRow) \n------------------");
-//// int lastIndex = smFactory.getMaxItemIndex();
-// EntryInfo[] row = (EntryInfo[]) smFactory.getRow(22);
-// for(int i=0; i<lastIndex; i++) {
-//	 System.out.print(i+":"+row[i].getRating()+", "+row[i].getTimestamp()+" | ");
-// }

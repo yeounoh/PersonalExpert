@@ -210,7 +210,7 @@ public class MyFavoriteExperts {
 			
 			for(int di=0;di<sparse_month.length;di++){
 				for(int i=0;i<k.length;i++){
-					for(int f=0;f<5;f++){
+					for(int f=0;f<nfold;f++){
 						System.out.println("rs sparse+: "+sparse_month[di] + ", k: "+k[i]+", f: "+(f+1));
 						
 						String p_train = wdir+"/user_train_f"+(f+1)+".txt";
@@ -225,10 +225,10 @@ public class MyFavoriteExperts {
 						RandomSearch rs = new RandomSearch(p_train_v, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
 						
 						//rs.findExperts(p_optimal_sim, k[i], 1); //const_type = 1
-						rs.findExperts(p_optimal_exp, k[i], 2); //const_type = 2
+						//rs.findExperts(p_optimal_exp, k[i], 2); //const_type = 2
 
 						try{
-							//RandomSearch rs= new RandomSearch(p_train, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
+							rs= new RandomSearch(p_train, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
 							
 //							double mae_sim= rs.rsEval(p_optimal_sim, k[i], 1); //mae
 //							double precision_sim= rs.rsEval(p_optimal_sim, k[i], 2); //hit ratio
@@ -697,14 +697,14 @@ public class MyFavoriteExperts {
 		int[] sparse_month= new int[]{0};
 		int[] nrec_size= new int[]{20};
 		
-		mfe.kNearestNeighbor(wdir, k, nfold, sparse_month, nrec_size);
+//		mfe.kNearestNeighbor(wdir, k, nfold, sparse_month, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 1, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 2, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 3, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 4, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 5, nrec_size);
 //		
-//		mfe.optimalExperts(wdir, k, nfold, sparse_month, nrec_size);
+		mfe.optimalExperts(wdir, k, nfold, sparse_month, nrec_size);
 //		mfe.getSVMdata(wdir, k, j, nfold, sparse_month);
 		//-> generate SVM models
 //		ParserSVM.parseResult(wdir+"/svm/output", j, k, nfold, sparse_month);
