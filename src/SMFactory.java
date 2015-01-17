@@ -135,8 +135,8 @@ public class SMFactory implements SparseMatrix {
 			}
 			else {	// user empty
 				EntryInfo ItemInfo = new EntryInfo();
-				ItemInfo.setRating(timestamp);
-				ItemInfo.setTimestamp(0);
+				ItemInfo.setRating(0);
+				ItemInfo.setTimestamp(timestamp);
 
 				HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
 				ratings.put(itemID-1, ItemInfo);
