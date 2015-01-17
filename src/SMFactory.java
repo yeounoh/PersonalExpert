@@ -151,7 +151,7 @@ public class SMFactory implements SparseMatrix {
 	 * Get an entry (can be null)
 	 * @param int row: userID-1
 	 * @param int col: itemID-1
-	 * @return EntryInfo object having byte rating & int timestamp
+	 * @return EntryInfo object having double rating & int timestamp
 	 */
 	public Object getEntry(int row, int col) {
 		if(userList.get(row) == null)

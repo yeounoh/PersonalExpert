@@ -1,5 +1,5 @@
 public class EntryInfo {
-	private byte rating=0;
+	private double rating=0;
 	private int timestamp=0;
 
 	/**
@@ -7,8 +7,8 @@ public class EntryInfo {
 	 * @param 
 	 * @return int rating
 	 */
-	public int getRating() {
-		return (int)rating;
+	public double getRating() {
+		return rating;
 	}
 
 	/**
@@ -17,7 +17,7 @@ public class EntryInfo {
 	 * @return
 	 */
 	public void setRating(double rating2) {
-		this.rating = (byte)rating2;
+		this.rating = rating2;
 	}
 
 	/**
