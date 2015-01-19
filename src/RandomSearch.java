@@ -149,7 +149,7 @@ public class RandomSearch {
 					tokens2= tokens[i].split("[:]");
 					int smid= Integer.parseInt(tokens2[0]);
 					long timestamp= Long.parseLong(tokens2[1]);
-					if(sparse_month != -1 && timestamp > cut_time){
+					if(sparse_month != -1 && timestamp > cut_time){ 
 						ui_train_sparse.deleteRating(suid-1, smid-1);
 						r_cnt--;
 					}
@@ -208,7 +208,13 @@ public class RandomSearch {
 			for(int i=0;i<nuser;i++){
 				double[] r_i = ui_train_sparse.getRowRating(i);
 				double[] r_0 = ui_train_sparse.getRowRating(0);
-				String sim_i = ""+sim.pearsonCorr(r_i,u_avg_rating[i],r_0,u_avg_rating[0]);
+				
+				String sim_i = "";
+				if(i==0)
+					sim_i += "-1";
+				else
+					sim_i += sim.pearsonCorr(r_i,u_avg_rating[i],r_0,u_avg_rating[0]);
+				
 				int cnt_ij= 0, cnt_ci= 0;
 				for(int k=0;k<nitem;k++){ //for each item
 					if((r_i[k]!=0) && (r_0[k]==0))
@@ -222,7 +228,10 @@ public class RandomSearch {
 				
 				for(int j=1;j<nuser;j++){
 					double[] r_j = ui_train_sparse.getRowRating(j);
-					sim_i += " "+sim.pearsonCorr(r_i,u_avg_rating[i],r_j,u_avg_rating[j]);
+					if(i==j)
+						sim_i += " -1";
+					else
+						sim_i += " "+sim.pearsonCorr(r_i,u_avg_rating[i],r_j,u_avg_rating[j]);
 					cnt_ij= 0; cnt_ci= 0;
 					for(int k=0;k<nitem;k++){ //for each item
 						if((r_i[k]!=0) && (r_j[k]==0))
@@ -518,7 +527,7 @@ public class RandomSearch {
 		FileStorage fs_uu_sim = new FileStorage("rs_uu_sim.txt");
 		fs_uu_sim.open(); 
 		for(int i=0;i<nuser;i++){
-			int suid= i+1;
+			int suid= i+1; System.out.println(suid);
 									
 			int[] optimal= new int[k];
 			try{
@@ -536,39 +545,38 @@ public class RandomSearch {
 					}
 				}
 				br.close();
+				
+				double[] uu_sim = fs_uu_sim.seqAccess();
+				for(int j=0;j<nitem;j++){
+					int smid= j+1;
+					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,j);
+					if(ei == null)
+						continue;
+					double trating= ei.getRating();
+					
+					double prating= predict(optimal,uu_sim,suid,smid);
+					
+					if(true){
+						mae+= Math.abs(trating-prating);
+						nrating++;
+					}
+					if(prating > u_avg_rating[suid-1]){
+						nrec++;
+						if(trating > u_avg_rating[suid-1]){
+							nhit_rec++;
+						}
+					}
+					if(trating > u_avg_rating[suid-1]){
+						nliked++;
+						if(prating > u_avg_rating[suid-1]){
+							nhit_liked++;
+						}
+					}
+				}
 			}
 			catch(Exception e){
 				e.printStackTrace();
 				System.exit(1);
-			}
-			
-			double[] uu_sim = fs_uu_sim.seqAccess();
-			for(int j=0;j<nitem;j++){
-				int smid= j+1;
-				EntryInfo ei = (EntryInfo) ui_test.getEntry(i,j);
-				if(ei == null)
-					continue;
-				double trating= ei.getRating();
-				
-				
-				double prating= predict(optimal,uu_sim,suid,smid);
-				
-				if(true){
-					mae+= Math.abs(trating-prating);
-					nrating++;
-				}
-				if(prating > u_avg_rating[suid-1]){
-					nrec++;
-					if(trating > u_avg_rating[suid-1]){
-						nhit_rec++;
-					}
-				}
-				if(trating > u_avg_rating[suid-1]){
-					nliked++;
-					if(prating > u_avg_rating[suid-1]){
-						nhit_liked++;
-					}
-				}
 			}
 		}
 		fs_uu_sim.close();
@@ -721,7 +729,7 @@ public class RandomSearch {
 		//for each user 
 		for(int i=0;i<optimal.length;i++){ 
 			EntryInfo ei = (EntryInfo) ui_train.getEntry(optimal[i]-1,smid-1);
-			if(ei != null){ //for an expert who rated m
+			if(ei != null && ei.getRating() != 0.0){ //for an expert who rated m
 				sumTop+= (ei.getRating() - u_avg_rating[optimal[i]-1]) * sim[optimal[i]-1];
 				sumBot+= Math.abs(sim[optimal[i]-1]); 
 			}

@@ -222,13 +222,13 @@ public class MyFavoriteExperts {
 						//String p_optimal_sim = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"sim.txt";
 						String p_optimal_exp = wdir+"/optimal_k"+k[i]+"_f"+(f+1)+"_s"+sparse_month[di]+"_exp.txt"; //wdir+"/test.txt"; //
 						
-						RandomSearch rs = new RandomSearch(p_train_v, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
+						//RandomSearch rs = new RandomSearch(p_train_v, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
 						
 						//rs.findExperts(p_optimal_sim, k[i], 1); //const_type = 1
 						//rs.findExperts(p_optimal_exp, k[i], 2); //const_type = 2
 
 						try{
-							rs= new RandomSearch(p_train, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
+							RandomSearch rs= new RandomSearch(p_train, p_valid, p_test, p_train_t, p_release, this.nuser, this.nitem, sparse_month[di]);
 							
 //							double mae_sim= rs.rsEval(p_optimal_sim, k[i], 1); //mae
 //							double precision_sim= rs.rsEval(p_optimal_sim, k[i], 2); //hit ratio
@@ -293,11 +293,12 @@ public class MyFavoriteExperts {
 			bw2.close();
 			bw3.close();
 			bw4.close();
-			bw5.close();
+			//bw5.close();
 			bw6.close();
 			bw7.close();
 		}catch(Exception e){
-			System.err.print(e);
+			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 	
@@ -697,14 +698,14 @@ public class MyFavoriteExperts {
 		int[] sparse_month= new int[]{0};
 		int[] nrec_size= new int[]{20};
 		
-//		mfe.kNearestNeighbor(wdir, k, nfold, sparse_month, nrec_size);
+		mfe.kNearestNeighbor(wdir, k, nfold, sparse_month, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 1, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 2, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 3, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 4, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 5, nrec_size);
 //		
-		mfe.optimalExperts(wdir, k, nfold, sparse_month, nrec_size);
+		//mfe.optimalExperts(wdir, k, nfold, sparse_month, nrec_size);
 //		mfe.getSVMdata(wdir, k, j, nfold, sparse_month);
 		//-> generate SVM models
 //		ParserSVM.parseResult(wdir+"/svm/output", j, k, nfold, sparse_month);

@@ -30,8 +30,6 @@ public class KNearestNeighbor {
 	private double[] i_avg_rating;
 	private double[] u_std;
 	//private double[][] uu_sim; //store in file
-	private double[][] u_avg_genre;
-	private int[][] i_genre;
 	//private long[][] ui_time;
 	private long[] i_release;
 	private long ref_time; //22-Apr-1998
@@ -40,13 +38,12 @@ public class KNearestNeighbor {
 	
 	private int nuser;
 	private int nitem;
-	private int ngenre;
 	private int sparse_month = -1;
 	
 	public KNearestNeighbor(String p_train, String p_test, String p_train_t, String p_release, String p_genre, int nuser, int nitem, int ngenre) throws IOException{
 		this.nuser= nuser;
 		this.nitem= nitem;
-		this.ngenre= ngenre;
+		//this.ngenre= ngenre;
 		
 		KNNsetUserItemTest(p_train, p_test, p_train_t, p_release, p_genre);
 	}
@@ -54,7 +51,7 @@ public class KNearestNeighbor {
 	public KNearestNeighbor(String p_train, String p_test, String p_train_t, String p_release, String p_genre, int nuser, int nitem, int ngenre, int sparse_month) throws IOException{
 		this.nuser= nuser;
 		this.nitem= nitem;
-		this.ngenre= ngenre;
+		//this.ngenre= ngenre;
 		this.sparse_month= sparse_month;
 		
 		try {
@@ -122,14 +119,14 @@ public class KNearestNeighbor {
 			fis= new FileInputStream(p_train_t);
 			br= new BufferedReader(new InputStreamReader(fis));
 			while((line= br.readLine())!=null){
-				ui_train.insertTimestamp(line);
+				ui_train_sparse.insertTimestamp(line);
 				tokens= line.split("[,]");
 				int suid= Integer.parseInt(tokens[0]);
 				for(int i=1;i<tokens.length;i++){
 					tokens2= tokens[i].split("[:]");
 					int smid= Integer.parseInt(tokens2[0]);
 					long timestamp= Long.parseLong(tokens2[1]);
-					if(sparse_month != -1 && timestamp > cut_time){
+					if(sparse_month != -1 && timestamp > cut_time){ 
 						ui_train_sparse.deleteRating(suid-1, smid-1);
 						r_cnt--;
 					}
@@ -177,10 +174,17 @@ public class KNearestNeighbor {
 		Similarity sim= new Similarity();
 		for(int i=0;i<nuser;i++){
 			double[] r_i = ui_train_sparse.getRowRating(i);
-			String sim_i = ""+sim.pearsonCorr(r_i,u_avg_rating[i],ui_train_sparse.getRowRating(0),u_avg_rating[0]);
+			String sim_i = "";
+			if(i==0)
+				sim_i += "-1";
+			else
+				sim_i += sim.pearsonCorr(r_i,u_avg_rating[i],ui_train_sparse.getRowRating(0),u_avg_rating[0]);
 			for(int j=1;j<nuser;j++){ //lower half
 				double[] r_j = ui_train_sparse.getRowRating(j);
-				sim_i += " "+sim.pearsonCorr(r_i,u_avg_rating[i],r_j,u_avg_rating[j]);
+				if(i==j)
+					sim_i += " -1";
+				else
+					sim_i += " "+sim.pearsonCorr(r_i,u_avg_rating[i],r_j,u_avg_rating[j]);
 			}
 			bw.write(sim_i);
 			bw.newLine();
@@ -257,7 +261,7 @@ public class KNearestNeighbor {
 			FileStorage fs_uu_sim = new FileStorage("knn_uu_sim.txt");
 			fs_uu_sim.open(); 
 			for(int i=0;i<nuser;i++){
-				int suid= i+1; System.out.println("eval "+suid);
+				int suid= i+1; 
 				
 				double[] uu_sim = fs_uu_sim.seqAccess();
 				int[] neighbor= Tools.sortTopK(uu_sim, k); //(uu_sim[suid-1], k);
@@ -278,7 +282,7 @@ public class KNearestNeighbor {
 					
 					EntryInfo ei = (EntryInfo) ui_test.getEntry(i,j);
 					
-					if(ei == null) //(type != 4 && trating == 0.0)
+					if(ei == null)
 						continue;
 					
 					double trating= ei.getRating();
@@ -361,7 +365,7 @@ public class KNearestNeighbor {
 			FileStorage fs_uu_sim = new FileStorage("knn_uu_sim.txt");
 			fs_uu_sim.open();
 			for(int i=0;i<nuser;i++){
-				int suid= i+1; System.out.println("eval2 "+suid);
+				int suid= i+1;
 				
 				double[] uu_sim = fs_uu_sim.seqAccess();
 				int[] neighbor= Tools.sortTopK(uu_sim, k); //(uu_sim[suid-1], k);
@@ -457,9 +461,11 @@ public class KNearestNeighbor {
 		
 		for(int i=0;i<neighbor.length;i++){
 			EntryInfo ei = (EntryInfo) ui_train.getEntry(neighbor[i]-1,smid-1);
+			if(ei != null && ei.getRating() == 0.0) 
+				System.out.println(ei.getRating());
 			if(ei != null && ei.getRating() != 0.0){
-				sumTop+= (ei.getRating() - u_avg_rating[neighbor[i]-1]) * sim[neighbor[i]-1];
-				sumBot+= Math.abs(sim[neighbor[i]-1]);
+				sumTop += (ei.getRating() - u_avg_rating[neighbor[i]-1]) * sim[neighbor[i]-1];
+				sumBot += Math.abs(sim[neighbor[i]-1]);
 			}
 			else{ //remove this? smoothing by user-genre preference
 			}
