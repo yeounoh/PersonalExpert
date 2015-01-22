@@ -41,25 +41,19 @@ public class SMFactory implements SparseMatrix {
 			itemID = Integer.parseInt(eachItem[0]);
 			rating = Double.parseDouble(eachItem[1]); 
 			
-//			if ( itemID > maxItemID )	{
-//				maxItemID = itemID;
-//			}
-			
 			if(userList.containsKey(userID-1) && userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item ok
 				((EntryInfo)userList.get(userID-1).get(itemID-1)).setRating(rating);
 			}
 			else if(userList.containsKey(userID-1) && !userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item empty
 				EntryInfo ItemInfo = new EntryInfo();
 				ItemInfo.setRating(rating);
-				ItemInfo.setTimestamp(0);
-				
+				//ItemInfo.setTimestamp(0);
 				userList.get(userID-1).put(itemID-1, ItemInfo);
 			}
 			else {	// user empty
 				EntryInfo ItemInfo = new EntryInfo();
 				ItemInfo.setRating(rating);
-				ItemInfo.setTimestamp(0);
-
+				//ItemInfo.setTimestamp(0);
 				HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
 				ratings.put(itemID-1, ItemInfo);
 				userList.put(userID-1, ratings);
@@ -79,15 +73,13 @@ public class SMFactory implements SparseMatrix {
 		else if(userList.containsKey(userID-1) && !userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item empty
 			EntryInfo ItemInfo = new EntryInfo();
 			ItemInfo.setRating(rating);
-			ItemInfo.setTimestamp(0);
-			
+			//ItemInfo.setTimestamp(0);
 			userList.get(userID-1).put(itemID-1, ItemInfo);
 		}
 		else {	// user empty
 			EntryInfo ItemInfo = new EntryInfo();
 			ItemInfo.setRating(rating);
-			ItemInfo.setTimestamp(0);
-
+			//ItemInfo.setTimestamp(0);
 			HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
 			ratings.put(itemID-1, ItemInfo);
 			userList.put(userID-1, ratings);
@@ -113,35 +105,33 @@ public class SMFactory implements SparseMatrix {
 	public int insertTimestamp(String line) {
 		String[] result = line.split(","); 					// 0: userID
 		userID = Integer.parseInt(result[0]);
-
+		
 		for(int i=1; i<result.length; i++) {
 			String[] eachItem = result[i].split(":");		// 0: ItemID, 1: rating
 			itemID = Integer.parseInt(eachItem[0]);
 			timestamp = Integer.parseInt(eachItem[1]);
 			
-//			if ( itemID > maxItemID )	{
-//				maxItemID = itemID;
-//			}
-			
 			if(userList.containsKey(userID-1) && userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item ok
-				((EntryInfo)userList.get(userID-1).get(itemID-1)).setTimestamp(timestamp);
-			}
+				((EntryInfo)userList.get(userID-1).get(itemID-1)).setTimestamp(timestamp); 
+			} 
+			/** insertTimestamp is called after insertRating
 			else if(userList.containsKey(userID-1) && !userList.get(userID-1).containsKey(itemID-1)) {	// user ok, item empty
-				EntryInfo ItemInfo = new EntryInfo(); System.out.println("this shouldn't be the case");
-				ItemInfo.setRating(0);
+				EntryInfo ItemInfo = new EntryInfo(); //System.out.println("this shouldn't be the case "+(tt++));
+				//ItemInfo.setRating(0);
 				ItemInfo.setTimestamp(timestamp);
 				
 				userList.get(userID-1).put(itemID-1, ItemInfo);
 			}
 			else {	// user empty
 				EntryInfo ItemInfo = new EntryInfo();
-				ItemInfo.setRating(0);
+				//ItemInfo.setRating(0);
 				ItemInfo.setTimestamp(timestamp);
 
 				HashMap<Integer, EntryInfo> ratings = new HashMap<Integer, EntryInfo>();
 				ratings.put(itemID-1, ItemInfo);
 				userList.put(userID-1, ratings);
 			}
+			*/
 		}
 		
 		return result.length - 1;

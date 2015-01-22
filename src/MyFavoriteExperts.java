@@ -694,7 +694,7 @@ public class MyFavoriteExperts {
 			
 		int[] k= new int[]{50};//{20,30,40,50,60};
 		int[] j = new int[]{10}; //1: normal SVM
-		int nfold= 1;
+		int nfold= 5;
 		int[] sparse_month= new int[]{0};
 		int[] nrec_size= new int[]{20};
 		

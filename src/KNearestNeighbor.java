@@ -115,11 +115,12 @@ public class KNearestNeighbor {
 				}
 			}
 			br.close();
-												
+							
 			fis= new FileInputStream(p_train_t);
 			br= new BufferedReader(new InputStreamReader(fis));
 			while((line= br.readLine())!=null){
 				ui_train_sparse.insertTimestamp(line);
+				
 				tokens= line.split("[,]");
 				int suid= Integer.parseInt(tokens[0]);
 				for(int i=1;i<tokens.length;i++){
@@ -461,8 +462,8 @@ public class KNearestNeighbor {
 		
 		for(int i=0;i<neighbor.length;i++){
 			EntryInfo ei = (EntryInfo) ui_train.getEntry(neighbor[i]-1,smid-1);
-			if(ei != null && ei.getRating() == 0.0) 
-				System.out.println(ei.getRating());
+			if(ei != null && ei.getRating() == 0.0) ;
+				//System.out.println("knn predict() "+ei.getRating());
 			if(ei != null && ei.getRating() != 0.0){
 				sumTop += (ei.getRating() - u_avg_rating[neighbor[i]-1]) * sim[neighbor[i]-1];
 				sumBot += Math.abs(sim[neighbor[i]-1]);
