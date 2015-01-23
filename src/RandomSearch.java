@@ -450,7 +450,7 @@ public class RandomSearch {
 							tmae+= Math.abs(trating-prating);
 							nrating++;
 						}
-						/**
+						/*
 						for(int ii=0;ii<nuser;ii++){
 							int suid= ii+1;
 							for(int jj=0;jj<nitem;jj++){
@@ -461,7 +461,7 @@ public class RandomSearch {
 									continue;
 								double trating= ei.getRating();
 								
-								double prating= predict(toptimal,suid,smid); 					
+								double prating= predict(toptimal,uu_sim,suid,smid); 					
 								
 								if(Double.isNaN(prating)){
 									System.out.println("error@rsEval()");
