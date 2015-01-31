@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -651,7 +652,7 @@ public class MyFavoriteExperts {
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 4, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 5, nrec_size);
 //		
-		mfe.optimalExperts(wdir, k, nfold, sparse_month, nrec_size);
+//		mfe.optimalExperts(wdir, k, nfold, sparse_month, nrec_size);
 //		mfe.getSVMdata(wdir, k, j, nfold, sparse_month);
 		//-> generate SVM models
 //		ParserSVM.parseResult(wdir+"/svm/output", j, k, nfold, sparse_month);
@@ -680,5 +681,26 @@ public class MyFavoriteExperts {
 		*/
 		
 //		Tools.expert_stats("C:/Users/user/workspace//MyFavoriteExperts/dataset/MovieLens/100k_data/optimal_k50_f1_s0_exp.txt", 50);
+		
+		//convert netflix files
+		try {
+			ConvertFactory cf = new ConvertFactory();
+			String dir = System.getProperty("user.dir");
+			dir = dir+"/dataset/NetFlix/movie_titles.txt";	
+			cf.convertingMovie(dir);
+			
+			//ConvertFactory cf = new ConvertFactory();
+			dir = System.getProperty("user.dir");
+			dir = dir+"/dataset/NetFlix/training_set";
+			cf.walk(dir);
+			System.out.println(cf.RatingList.toString());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 }
