@@ -590,11 +590,11 @@ public class MyFavoriteExperts {
 	 * 
 	 */
 	public static void main(String[] args){
-		
-		String mlens_100k = "/Users/yeounoh/git/PersonalExpert/dataset/MovieLens/raw_data/ml-100k";           
-		String wdir_100k= "/Users/yeounoh/git/PersonalExpert/dataset/MovieLens/100k_data"; //working directory
-		String nflx = "C:/Users/user/workspace/MyFavoriteExperts/dataset/Netflix/raw_data";
-		String wdir_nflx = "C:/Users/user/workspace/MyFavoriteExperts/dataset/Netflix/sampled";
+		String dir = System.getProperty("user.dir");
+		String mlens_100k = dir+"/dataset/MovieLens/raw_data/ml-100k";           
+		String wdir_100k= "/dataset/MovieLens/100k_data"; //working directory
+		String nflx = "/dataset/Netflix/raw_data";
+		String wdir_nflx = "/dataset/Netflix/sampled";
 		
 		int nuser= 0;
 		int nitem= 0;
@@ -685,12 +685,10 @@ public class MyFavoriteExperts {
 		//convert netflix files
 		try {
 			ConvertFactory cf = new ConvertFactory();
-			String dir = System.getProperty("user.dir");
 			dir = dir+"/dataset/NetFlix/movie_titles.txt";	
 			cf.convertingMovie(dir);
 			
 			//ConvertFactory cf = new ConvertFactory();
-			dir = System.getProperty("user.dir");
 			dir = dir+"/dataset/NetFlix/training_set";
 			cf.walk(dir);
 			System.out.println(cf.RatingList.toString());
