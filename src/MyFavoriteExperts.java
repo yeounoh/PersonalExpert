@@ -40,13 +40,31 @@ public class MyFavoriteExperts {
 			System.out.println("prepareDataset() locked");
 			return;
 		}
-		else if(type==1){ //deprecated
+		else if(type==1){ 
 			System.out.println("Netflix data experiment");
-			Parser p= new Parser();
-			p.preprocess(src,dst); //done: using 1000 movie (hard-coded)
-			p.rescaleMovieID(dst); //done
-			p.makeUserData(dst); //done: using 10000 users (hard-coded somewhere)
-			p.makeTestSet(dst); //done
+			
+			if(true){ //convert netflix files
+				try {
+					String dir = System.getProperty("user.dir");
+					ConvertFactory cf = new ConvertFactory();
+					String src1 = dir+"/dataset/NetFlix/movie_titles.txt";	
+					String dst1 = dir + "/dataset/NetFlix/raw_data/u.item";
+					cf.convertingMovie(src1,dst1);
+					
+					//ConvertFactory cf = new ConvertFactory();
+					String src_dir2 = dir+"/dataset/NetFlix/training_set";
+					String dst2 = dir + "/dataset/NetFlix/raw_data/u.data";
+					this.nuser = cf.walk(src_dir2,dst2);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			ParserMovieLens pml= new ParserMovieLens(this.nuser, this.nitem, this.ngenre);
+			pml.preprocess(src,dst);
+			pml.makeDataSet(dst,nfold); //5-fold cross-validation
+			pml.loadItemGenre(src, dst);
+			pml.loadItemRelease(src, dst);
 		}
 		else if(type==2){ //currently in-use
 			System.out.println("MovieLens data experiment");
@@ -592,9 +610,9 @@ public class MyFavoriteExperts {
 	public static void main(String[] args){
 		String dir = System.getProperty("user.dir");
 		String mlens_100k = dir+"/dataset/MovieLens/raw_data/ml-100k";           
-		String wdir_100k= "/dataset/MovieLens/100k_data"; //working directory
-		String nflx = "/dataset/Netflix/raw_data";
-		String wdir_nflx = "/dataset/Netflix/sampled";
+		String wdir_100k= dir+"/dataset/MovieLens/100k_data"; //working directory
+		String nflx = dir+"/dataset/Netflix/raw_data"; //~/git/PersonalExpert/dataset/NetFlix/raw_data
+		String wdir_nflx = dir+"/dataset/Netflix/sampled";
 		
 		int nuser= 0;
 		int nitem= 0;
@@ -603,18 +621,19 @@ public class MyFavoriteExperts {
 		
 		MyFavoriteExperts mfe= null;
 		
-		int exp_type= 2; //1:nflx, 2:movielens
+		int exp_type= 1; //1:nflx, 2:movielens
 		
 		if(exp_type == 1){
 			raw= nflx;
 			wdir= wdir_nflx;
 			
-			nuser= 0;
-			nitem= 0;
+			//100,480,507 ratings that 480,189 users gave to 17,770 movies.
+			nuser= 458376; //480189;
+			nitem= 17770;
 			ngenre= 0;
 			
 			mfe= new MyFavoriteExperts(nuser, nitem, ngenre);
-			mfe.prepareDataset(raw, wdir, 5, 1); //netflix parsing?
+			//mfe.prepareDataset(raw, wdir, 5, 1); //sample the original data set to the tenth.
 		}
 		else if(exp_type == 2){
 			raw= mlens_100k;
@@ -639,13 +658,13 @@ public class MyFavoriteExperts {
 			mfe.prepareDataset(raw, wdir, 5, 2); //MovieLens 
 		}
 			
-		int[] k= new int[]{50};//{20,30,40,50,60};
+		int[] k= new int[]{20};//{20,30,40,50,60};
 		int[] j = new int[]{10}; //1: normal SVM
 		int nfold= 1;
 		int[] sparse_month= new int[]{0};
 		int[] nrec_size= new int[]{20};
 		
-//		mfe.kNearestNeighbor(wdir, k, nfold, sparse_month, nrec_size);
+		mfe.kNearestNeighbor(wdir, k, nfold, sparse_month, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 1, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 2, nrec_size);
 //		mfe.commonExperts(wdir, k, nfold, sparse_month, 3, nrec_size);
@@ -658,10 +677,10 @@ public class MyFavoriteExperts {
 //		ParserSVM.parseResult(wdir+"/svm/output", j, k, nfold, sparse_month);
 //		mfe.personalExperts(wdir, k, j, nfold, sparse_month, nrec_size);
 		
-		k= new int[]{50};
-		sparse_month= new int[]{0,1,2};
-		j = new int[]{10}; //1: normal SVM
-		nrec_size= new int[]{20};
+//		k= new int[]{50};
+//		sparse_month= new int[]{0,1,2};
+//		j = new int[]{10}; //1: normal SVM
+//		nrec_size= new int[]{20};
 //		mfe.optimalExperts(wdir, k, nfold, sparse_month);
 //		mfe.getSVMdata(wdir, k, j, nfold, sparse_month);
 //		mfe.personalExperts(wdir, k, j, nfold, sparse_month, nrec_size);
@@ -682,23 +701,7 @@ public class MyFavoriteExperts {
 		
 //		Tools.expert_stats("C:/Users/user/workspace//MyFavoriteExperts/dataset/MovieLens/100k_data/optimal_k50_f1_s0_exp.txt", 50);
 		
-		//convert netflix files
-		try {
-			ConvertFactory cf = new ConvertFactory();
-			dir = dir+"/dataset/NetFlix/movie_titles.txt";	
-			cf.convertingMovie(dir);
-			
-			//ConvertFactory cf = new ConvertFactory();
-			dir = dir+"/dataset/NetFlix/training_set";
-			cf.walk(dir);
-			System.out.println(cf.RatingList.toString());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 
 	}
 }

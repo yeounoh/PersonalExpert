@@ -55,7 +55,10 @@ public class KNearestNeighbor {
 		this.sparse_month= sparse_month;
 		
 		try {
+			//MovieLens
 			ref_time = new SimpleDateFormat("dd-MMMM-yyyy", Locale.ENGLISH).parse("22-APR-1998").getTime()/1000;
+			//Netflix
+			ref_time = new SimpleDateFormat("dd-MMMM-yyyy", Locale.ENGLISH).parse("01-JAN-1940").getTime()/1000;
 			cut_time = ref_time - 60*60*24*30*sparse_month;
 		} 
 		catch (ParseException e) {
@@ -98,7 +101,7 @@ public class KNearestNeighbor {
 			
 			ui_train_sparse= ui_train.clone();
 			
-			double sparsity_orig= (1-(r_cnt/(double)(nuser*nitem)));
+			double sparsity_orig= (1-(r_cnt/nuser/nitem));
 			System.out.println("Training set sparsity: "+sparsity_orig);
 			
 			fis= new FileInputStream(p_test);
@@ -115,28 +118,30 @@ public class KNearestNeighbor {
 				}
 			}
 			br.close();
-							
-			fis= new FileInputStream(p_train_t);
-			br= new BufferedReader(new InputStreamReader(fis));
-			while((line= br.readLine())!=null){
-				ui_train_sparse.insertTimestamp(line);
-				
-				tokens= line.split("[,]");
-				int suid= Integer.parseInt(tokens[0]);
-				for(int i=1;i<tokens.length;i++){
-					tokens2= tokens[i].split("[:]");
-					int smid= Integer.parseInt(tokens2[0]);
-					long timestamp= Long.parseLong(tokens2[1]);
-					if(sparse_month != -1 && timestamp > cut_time){ 
-						ui_train_sparse.deleteRating(suid-1, smid-1);
-						r_cnt--;
+			
+			if(sparse_month > 0){
+				fis= new FileInputStream(p_train_t);
+				br= new BufferedReader(new InputStreamReader(fis));
+				while((line= br.readLine())!=null){
+					ui_train_sparse.insertTimestamp(line);
+					
+					tokens= line.split("[,]");
+					int suid= Integer.parseInt(tokens[0]);
+					for(int i=1;i<tokens.length;i++){
+						tokens2= tokens[i].split("[:]");
+						int smid= Integer.parseInt(tokens2[0]);
+						long timestamp= Long.parseLong(tokens2[1]);
+						if(timestamp > cut_time){ 
+							ui_train_sparse.deleteRating(suid-1, smid-1);
+							r_cnt--;
+						}
 					}
 				}
+				br.close();
+				
+				double sparsity_new= (1-(r_cnt/nuser/nitem));
+				System.out.println("Training set new sparsity: "+sparsity_new);
 			}
-			br.close();
-			
-			double sparsity_new= (1-(r_cnt/(double)(nuser*nitem)));
-			System.out.println("Training set new sparsity: "+sparsity_new);
 			
 			fis= new FileInputStream(p_release);
 			br= new BufferedReader(new InputStreamReader(fis));
@@ -156,13 +161,13 @@ public class KNearestNeighbor {
 			double avgsum=0;
 			int cnt= 0;
 			for(int j=0;j<nitem;j++){ //cols or items
-				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(i, j);
+				EntryInfo ei = (EntryInfo) ui_train_sparse.getEntry(i, j); 
 				if(ei != null){
 					cnt++;
 					avgsum+=ei.getRating();
 				}
 			}
-			u_avg_rating[i]= avgsum/((double) cnt);
+			u_avg_rating[i]= avgsum/cnt;
 			u_icount[i]= cnt;
 			
 			if(u_icount[i] == 0)

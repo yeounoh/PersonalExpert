@@ -16,6 +16,31 @@ import java.util.TreeMap;
 
 public class ConvertFactory {
 	
+	class time_info {
+		Integer ratings;
+		Long timeStamp;
+		
+		public time_info() {
+			super();
+			ratings = 0;
+			this.timeStamp = 0l;
+		}
+
+	}
+	
+	/**
+	 * CustomerID,Rating,Date
+	 * MovieIDs range from 1 to 17770 sequentially.
+	 * CustomerIDs range from 1 to 2649429, with gaps. There are 480189 users.
+	 * Ratings are on a five star (integral) scale from 1 to 5.
+	 * Dates have the format YYYY-MM-DD.
+	 */
+	private static HashMap<Integer, Integer> user_id_map = new HashMap<Integer,Integer>();
+	private static int user_id_cnt = 0;
+	//private static HashMap<Integer, Integer> item_id_map = new HashMap<Integer, Integer>();
+	//private static int item_id_cnt = 0;
+	private static int rating_cnt = 0;
+	
 	void convertingRating(String filename, BufferedWriter file) throws IOException, ParseException {
 		FileInputStream fis = new FileInputStream(filename);
 		BufferedReader br = new BufferedReader(new InputStreamReader(fis));
@@ -30,27 +55,28 @@ public class ConvertFactory {
 				count++;
 			} 
 			else {
-				String[] tokens = line.split(",");
-				file.write(tokens[0] + "\t" + MovieNum + "\t" + tokens[1] +
-				"\t" + ChangeUnixTime(tokens[2]));
-				file.flush();
-				file.newLine();
+				if(count++%10 != 0)
+					continue; //rating count: 10039964, user_id_cnt: 458376
+				else{
+					String[] tokens = line.split(",");
+					int user_id = Integer.parseInt(tokens[0]);
+					if(!user_id_map.containsKey(user_id)){
+						user_id_map.put(user_id, ++user_id_cnt);
+					}
+					
+					file.write(user_id_map.get(user_id).intValue() + "\t" + MovieNum + "\t" + tokens[1] +
+							"\t" + ChangeUnixTime(tokens[2]));
+					file.flush();
+					file.newLine();
+					rating_cnt++;
+				}
+				
 			}
 		}
 		br.close();
 	}
 
-	class time_info {
-		Integer ratings;
-		Long timeStamp;
-		
-		public time_info() {
-			super();
-			ratings = 0;
-			this.timeStamp = 0l;
-		}
-
-	}
+	
 
 	void convertingMovie(String filename, String dst) throws IOException {
 		BufferedWriter file = new BufferedWriter(new FileWriter(dst, true)); //"u.item"
@@ -61,8 +87,12 @@ public class ConvertFactory {
 
 		while ((line = br.readLine()) != null) {
 			tokens = line.split(",");
+			String date = tokens[1];
+			if(date.equals("NULL")){
+				date = "1985";
+			}
 			file.write(tokens[0] + "|" + tokens[2] + "|" + "01-Jan-"
-					+ tokens[1]
+					+ date
 					+ "||http://unknown|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0");
 			file.flush();
 			file.newLine();
@@ -70,16 +100,14 @@ public class ConvertFactory {
 		file.close();
 	}
 
-	public void walk(String path, String dst) throws IOException, ParseException {
-		ConvertFactory cf = new ConvertFactory();
-		
+	public int walk(String path, String dst) throws IOException, ParseException {
 		File root = new File(path);
 		File[] list = root.listFiles();
 
 		BufferedWriter file = new BufferedWriter(new FileWriter(dst, true)); //"u.data"
 		
 		if (list == null)
-			return;
+			return -1;
 
 		int cnt = 0;
 		for (File f : list) {
@@ -89,12 +117,15 @@ public class ConvertFactory {
 				String file_path = f.getAbsoluteFile().toString();
 				String[] tks = file_path.split("/");
 				if(!tks[tks.length-1].equals(".DS_Store")){
-					cf.convertingRating(f.getAbsoluteFile().toString(), file);
+					convertingRating(f.getAbsoluteFile().toString(), file);
 				}
-				System.out.println(++cnt);
 			}
 		}
 		file.close();
+		
+		System.out.println("rating count: " + rating_cnt);
+		System.out.println("user_id_cnt: " + user_id_cnt);
+		return user_id_cnt;
 	}
 
 	long ChangeUnixTime(String tok) throws ParseException {

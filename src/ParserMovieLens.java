@@ -49,12 +49,12 @@ public class ParserMovieLens {
 		 * @param r of form "mid:rating"
 		 */
 		public void addRating(String r){
-			this.ratings= this.ratings + "," + r;
+			this.ratings= this.ratings + "," + r; 
 			this.i_cnt++;
 		}
 		
 		public void addTimestamp(String t){
-			this.timestamps= this.timestamps + "," + t;
+			this.timestamps= this.timestamps + "," + t; 
 		}
 		
 		public int getUID(){
@@ -102,11 +102,12 @@ public class ParserMovieLens {
 			//to alleviate the issue of frequent file open/close operations
 			HashMap<String, User> uid_map= new HashMap<String, User>(nuser);
 			
+			int cnt= 0; String tuid, trating, ttimestamp;
 			while((line = br.readLine())!=null){
 				tokens = line.split("\t|::");
-				String tuid = tokens[0]; 
-				String trating = "" + tokens[1] + ":" + tokens[2];
-				String ttimestamp = "" + tokens[1] + ":" + tokens[3];
+				tuid = tokens[0]; 
+				trating = "" + tokens[1] + ":" + tokens[2];
+				ttimestamp = "" + tokens[1] + ":" + tokens[3];
 				
 				if(uid_map.containsKey(tuid)){
 					uid_map.get(tuid).addRating(trating);
@@ -116,6 +117,8 @@ public class ParserMovieLens {
 					User tuser = new User(Integer.parseInt(tuid),trating,ttimestamp);
 					uid_map.put(tuid, tuser);
 				}
+				if(++cnt%1000000==0)
+					System.out.println(cnt);
 			}
 			br.close();
 			
@@ -350,7 +353,7 @@ public class ParserMovieLens {
 				
 				if(tokens[2].length() == 0 ) 
 					continue;
-				
+				System.out.println(tokens[2]);
 				Date tdate = new SimpleDateFormat("dd-MMMM-yyyy", Locale.ENGLISH).parse(tokens[2]);
 				long time = tdate.getTime()/1000;
 				bw.write("" + tokens[0] + ":" + time);
